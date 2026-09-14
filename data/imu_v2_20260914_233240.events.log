@@ -1,0 +1,19 @@
+0.000000,ESP-ROM:esp32s3-20210327
+0.000000,Build:Mar 27 2021
+0.000000,rst:0x15 (USB_UART_CHIP_RESET),boot:0x8 (SPI_FAST_FLASH_BOOT)
+0.000000,Saved PC:0x40378e62
+0.000000,SPIWP:0xee
+0.000000,mode:DIO, clock div:1
+0.000000,load:0x3fce2820,len:0x10cc
+0.000000,load:0x403c8700,len:0xc2c
+0.000000,load:0x403cb700,len:0x30b0
+0.000000,entry 0x403c88b8
+0.000000,IMU_V2_BOOT
+0.000000,IMU_INIT,status=All is well.
+0.000000,IMU_CONFIG,acc=16g,gyro=2000dps,acc_dlpf=111.4Hz,gyr_dlpf=119.5Hz,odr_acc=225Hz,odr_gyr=220Hz,i2c=50000,addr=0x68
+0.000000,IMU_V2_READY
+0.000000,seq,timestamp_us,ax_mg,ay_mg,az_mg,gx_dps,gy_dps,gz_dps,temp_c
+1.000000,STAT,hz=226.0,total=226,seq=226,errors=0,resets=0
+2.000000,STAT,hz=225.3,total=451,seq=451,errors=0,resets=0
+3.000000,STAT,hz=224.7,total=675,seq=675,errors=0,resets=0
+4.000000,STAT,hz=224.5,total=899,seq=899,errors=0,resets=0

@@ -211,3 +211,377 @@ IMU_READY
 4. 确认保存行数大于 800。
 5. 确认温度正常，没有长时间固定饱和值。
 6. 稳定后再进行第一次实际投篮动作采集。
+
+## 六、2026-09-14 稳定链路复测
+
+硬件处理：
+
+- 改为六线直连，减少面包板和松动线材的影响。
+- `NCS` 接 `3V3`，固定 I2C 模式。
+- `AD0` 接 `GND`，固定地址为 `0x68`。
+- SDA 接 `GPIO8`，SCL 接 `GPIO9`。
+- I2C 时钟保持 `50kHz`。
+
+通信验证：
+
+```text
+Found device at 0x68
+tx=0 rx=1 who=0xEA
+```
+
+30 秒静止采集结果：
+
+```text
+rows                    6645
+firmware duration       30.001 s
+sample rate             221.46 Hz
+median interval         4.515 ms
+p95 interval            4.528 ms
+maximum interval        4.603 ms
+timestamp gaps >= 20ms  0
+sequence discontinuities 0
+errors                  0
+resets                  0
+clipped samples         0
+gravity magnitude       1012.46 mg
+gravity stdev           5.45 mg
+gyro mean               below 1 dps per axis
+temperature             33.06-34.21 C
+```
+
+验收结论：
+
+- 长时读数连续性通过。
+- 无固定饱和值和通信复位。
+- 静止重力模长接近 `1000 mg`。
+- 当前六线直连方案可作为后续动作采集基线。
+
+原始文件：
+
+```text
+data/imu_v2_20260914_232426.csv
+data/imu_v2_20260914_232426.events.log
+data/imu_v2_20260914_232426.meta.json
+```
+
+两次 5 秒小幅动态测试：
+
+```text
+第一次
+rows                    1124
+sample rate             224.62 Hz
+maximum interval        6.542 ms
+timestamp gaps >= 20ms  0
+errors                  0
+resets                  0
+clipped samples         0
+gyro magnitude max      16.91 dps
+
+第二次
+rows                    1119
+sample rate             224.12 Hz
+maximum interval        6.707 ms
+timestamp gaps >= 20ms  0
+errors                  0
+resets                  0
+clipped samples         0
+gyro magnitude max      41.11 dps
+```
+
+动作测试结论：
+
+- 小幅运动时采样链路保持连续。
+- 没有出现 v1 数据中的全零、固定饱和或传感器重启。
+- 当前数据线长度只能完成桌面小幅动作测试。
+- 正式投篮动作需要无绳供电和本地记录，或更长的 USB 数据线。
+
+原始文件：
+
+```text
+data/imu_v2_20260914_233222.csv
+data/imu_v2_20260914_233240.csv
+```
+
+## 七、2026-09-15 无绳 Flash 记录
+
+v3 本地记录测试结果：
+
+```text
+rows                    2094
+sampling duration       10.004 s
+average sample rate     209.3 Hz
+errors                  0
+resets                  0
+write failures          0
+file size               129440 bytes
+```
+
+问题是 v3 每采样一次就写入 LittleFS，Flash 写入会周期性阻塞：
+
+```text
+gaps >= 20 ms           31
+largest gap             52.659 ms
+median interval         4.368 ms
+p95 interval            4.443 ms
+```
+
+该方案可以保存桌面数据，但投篮峰值可能落入写入停顿。v4 改为：
+
+- 10 秒采样期间只写入 RAM 缓冲。
+- 采样结束后一次性生成 CSV 并写入 LittleFS。
+- 文件导出协议保持与 v3 相同。
+
+当前状态：
+
+- USB CDC 串口、LittleFS、自动格式化和文件导出流程已打通。
+- v4 本地记录测试通过。
+
+v4 对照结果：
+
+```text
+rows                    2269
+sampling duration       9.9959 s
+average sample rate     226.89 Hz
+median interval         4.049 ms
+p95 interval            5.795 ms
+maximum interval        5.844 ms
+gaps >= 10 ms           0
+gaps >= 20 ms           0
+sequence discontinuities 0
+errors                  0
+resets                  0
+write failures          0
+```
+
+v4 数据文件：
+
+```text
+data/flash_v4_test_002.csv
+```
+
+无绳与按键验证：
+
+```text
+充电宝 + BOOT 键触发
+file                    capture_003.csv
+rows                    2270
+duration                9.9985 s
+sample rate             226.93 Hz
+maximum interval        5.874 ms
+gaps >= 10 ms           0
+gaps >= 20 ms           0
+sequence discontinuities 0
+errors                  0
+resets                  0
+clipped samples         0
+```
+
+USB 连接状态下的按键复测：
+
+```text
+file                    capture_004.csv
+rows                    2269
+duration                9.9967 s
+sample rate             226.88 Hz
+maximum interval        6.396 ms
+gaps >= 20 ms           0
+errors                  0
+resets                  0
+```
+
+归档文件：
+
+```text
+data/flash_v4_untethered_003.csv
+data/flash_v4_button_004.csv
+```
+
+当前结论：
+
+- 充电宝供电、`BOOT` 键触发、Flash 本地记录、USB 导出已全部打通。
+- v4 采样间隔不再受 Flash 写入影响。
+- 可以进行传感器与 ESP32 的一体化腕部固定和首次真实投篮动作采集。
+
+手持动态测试：
+
+```text
+file                    capture_005.csv
+rows                    2270
+duration                9.9988 s
+sample rate             226.93 Hz
+maximum interval        6.286 ms
+gaps >= 10 ms           0
+sequence discontinuities 0
+errors                  0
+resets                  0
+clipped samples         0
+```
+
+动作峰值出现在：
+
+```text
+0.205 s                 gyro magnitude 16.43 dps
+1.175 s                 gyro magnitude 15.33 dps
+1.171 s                 gyro magnitude 15.24 dps
+```
+
+`3-10 s` 几乎没有明显动作，因此该数据用于验证无绳链路有效，但不作为模拟投篮样本。
+
+归档文件：
+
+```text
+data/flash_v4_handheld_005.csv
+```
+
+第一组有效模拟投篮动作：
+
+```text
+file                    capture_006.csv
+rows                    2270
+duration                9.9986 s
+sample rate             226.93 Hz
+maximum interval        5.932 ms
+gaps >= 10 ms           0
+sequence discontinuities 0
+errors                  0
+resets                  0
+clipped samples         0
+```
+
+动作统计：
+
+```text
+lead-in 0-1.5 s          gyro mean 3.42 dps
+action 2-5 s             gyro mean 47.57 dps
+action 2-5 s             gyro maximum 196.22 dps
+action 2-5 s             acceleration magnitude 280.19-1665.17 mg
+overall acceleration max 2378.96 mg
+overall gyro max         196.22 dps
+```
+
+结论：
+
+- 模拟投篮动作已经被清晰记录，主要峰值约为 `3.77 s`。
+- 采样间隔稳定，没有 Flash 写入造成的缺口。
+- 当前量程 `+/-16g` 和 `+/-2000dps` 尚有充足余量。
+- 该组可作为第一份可用的模拟投篮基线数据。
+
+归档文件：
+
+```text
+data/flash_v4_sim_shot_006.csv
+```
+
+三组连续模拟投篮：
+
+```text
+file                    capture_007.csv
+rows                    2269
+sample rate             226.88 Hz
+maximum interval        6.335 ms
+gyro magnitude max      1033.02 dps
+acceleration magnitude max 6715.93 mg
+clipped samples         0
+
+file                    capture_008.csv
+rows                    2269
+sample rate             226.93 Hz
+maximum interval        5.844 ms
+gyro magnitude max      235.13 dps
+acceleration magnitude max 2074.91 mg
+clipped samples         0
+
+file                    capture_009.csv
+rows                    2269
+sample rate             226.84 Hz
+maximum interval        6.322 ms
+gyro magnitude max      311.07 dps
+acceleration magnitude max 1988.86 mg
+clipped samples         0
+```
+
+三组均无采样缺口、序号跳变、传感器复位或削顶，已作为有效模拟投篮数据保存。
+
+`capture_010.csv` 只有表头、0 行数据。原因是第三次动作导致传感器 VCC 连接脱落，重新接好后 ICM 没有成功恢复通信，按键再次触发时只创建了空文件。
+
+硬件结论：
+
+- 当前手持结构在剧烈动作下不可靠，VCC 电源线会脱落。
+- 在完成机械固定和线束应力释放前，停止继续做大幅动作。
+
+归档文件：
+
+```text
+data/flash_v4_shot_trial_007.csv
+data/flash_v4_shot_trial_008.csv
+data/flash_v4_shot_trial_009.csv
+```
+
+文件系统满盘测试：
+
+```text
+capture_010.csv
+rows                    2269
+duration                9.9945 s
+sample rate             226.92 Hz
+maximum interval        6.029 ms
+gyro magnitude max      2.08 dps
+status                  valid static capture
+
+capture_011.csv
+rows in file            822
+duration                3.6185 s
+gyro magnitude max      13.50 dps
+status                  invalid/truncated
+reason                  filesystem full during write
+```
+
+处理：
+
+- 从 ESP32 下载并删除了 `capture_001` 到 `capture_011`，释放 `1433600` bytes。
+- 导出工具改为下载成功后在 ESP32 上删除对应文件。
+- v4 增加最低剩余空间检查。
+- v4 写盘失败时删除半成品文件，并分别报告采样行数和实际写入行数。
+
+清理后静止与加强测试：
+
+```text
+file                    capture_001.csv
+test                    static
+rows                    2269
+duration                9.9965 s
+sample rate             226.88 Hz
+maximum interval        6.244 ms
+gaps >= 10 ms           0
+gyro magnitude max      1.94 dps
+acceleration magnitude  974.34-1006.55 mg
+errors                  0
+resets                  0
+
+file                    capture_002.csv
+test                    2 s still, 2-6 s motion, 6-10 s still
+rows                    2269
+duration                9.9966 s
+sample rate             226.88 Hz
+maximum interval        6.357 ms
+gaps >= 10 ms           0
+gyro magnitude mean     28.81 dps during 2-6 s
+gyro magnitude max      187.33 dps
+acceleration magnitude max 1465.84 mg
+errors                  0
+resets                  0
+clipped samples         0
+```
+
+结论：
+
+- 清理文件系统后记录和导出恢复正常。
+- 加强动作没有造成连接脱落、采样缺口或传感器复位。
+- 仍需更可靠的机械固定后才能进行接近真实投篮强度的测试。
+
+归档文件：
+
+```text
+data/flash_v4_static_retest_001.csv
+data/flash_v4_strength_retest_002.csv
+```

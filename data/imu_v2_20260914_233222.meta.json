@@ -1,0 +1,28 @@
+{
+  "port": "COM5",
+  "baud": 230400,
+  "requested_seconds": 5.0,
+  "start_time": "2026-09-14T23:32:23.829130+08:00",
+  "end_time": "2026-09-14T23:32:28.831685+08:00",
+  "config": "IMU_CONFIG,acc=16g,gyro=2000dps,acc_dlpf=111.4Hz,gyr_dlpf=119.5Hz,odr_acc=225Hz,odr_gyr=220Hz,i2c=50000,addr=0x68",
+  "quality": {
+    "rows": 1124,
+    "host_duration_s": 5.0,
+    "firmware_duration_s": 5.0,
+    "sample_rate_hz": 224.62,
+    "median_interval_ms": 4.497,
+    "p95_interval_ms": 4.517,
+    "gap_threshold_ms": 20.0,
+    "gap_count": 0,
+    "largest_gaps": [],
+    "gravity_magnitude_mean_mg": 1004.05,
+    "gravity_magnitude_stdev_mg": 9.62,
+    "temperature_min_c": 33.97,
+    "temperature_max_c": 34.88,
+    "clipped_acc_samples": 0,
+    "clipped_gyro_samples": 0,
+    "error_events": 0,
+    "reset_events": 0,
+    "ready_seen": true
+  }
+}

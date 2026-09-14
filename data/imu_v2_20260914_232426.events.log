@@ -1,0 +1,44 @@
+0.000000,ESP-ROM:esp32s3-20210327
+0.000000,Build:Mar 27 2021
+0.000000,rst:0x15 (USB_UART_CHIP_RESET),boot:0x8 (SPI_FAST_FLASH_BOOT)
+0.000000,Saved PC:0x40378e62
+0.000000,SPIWP:0xee
+0.000000,mode:DIO, clock div:1
+0.000000,load:0x3fce2820,len:0x10cc
+0.000000,load:0x403c8700,len:0xc2c
+0.000000,load:0x403cb700,len:0x30b0
+0.000000,entry 0x403c88b8
+0.000000,IMU_V2_BOOT
+0.000000,IMU_INIT,status=All is well.
+0.000000,IMU_CONFIG,acc=16g,gyro=2000dps,acc_dlpf=111.4Hz,gyr_dlpf=119.5Hz,odr_acc=225Hz,odr_gyr=220Hz,i2c=50000,addr=0x68
+0.000000,IMU_V2_READY
+0.000000,seq,timestamp_us,ax_mg,ay_mg,az_mg,gx_dps,gy_dps,gz_dps,temp_c
+0.984000,STAT,hz=223.8,total=224,seq=224,errors=0,resets=0
+2.000000,STAT,hz=222.7,total=446,seq=446,errors=0,resets=0
+3.000000,STAT,hz=222.3,total=668,seq=668,errors=0,resets=0
+4.000000,STAT,hz=222.2,total=890,seq=890,errors=0,resets=0
+5.000000,STAT,hz=222.0,total=1112,seq=1112,errors=0,resets=0
+6.000000,STAT,hz=221.9,total=1334,seq=1334,errors=0,resets=0
+7.000000,STAT,hz=221.9,total=1556,seq=1556,errors=0,resets=0
+8.000000,STAT,hz=221.8,total=1778,seq=1778,errors=0,resets=0
+9.015000,STAT,hz=221.8,total=2000,seq=2000,errors=0,resets=0
+10.015000,STAT,hz=221.7,total=2222,seq=2222,errors=0,resets=0
+11.015000,STAT,hz=221.7,total=2444,seq=2444,errors=0,resets=0
+12.015000,STAT,hz=221.7,total=2666,seq=2666,errors=0,resets=0
+13.015000,STAT,hz=221.6,total=2888,seq=2888,errors=0,resets=0
+14.015000,STAT,hz=221.6,total=3110,seq=3110,errors=0,resets=0
+15.031000,STAT,hz=221.6,total=3332,seq=3332,errors=0,resets=0
+16.031000,STAT,hz=221.6,total=3553,seq=3553,errors=0,resets=0
+17.031000,STAT,hz=221.6,total=3775,seq=3775,errors=0,resets=0
+18.031000,STAT,hz=221.5,total=3997,seq=3997,errors=0,resets=0
+19.031000,STAT,hz=221.5,total=4219,seq=4219,errors=0,resets=0
+20.031000,STAT,hz=221.5,total=4441,seq=4441,errors=0,resets=0
+21.046000,STAT,hz=221.5,total=4663,seq=4663,errors=0,resets=0
+22.046000,STAT,hz=221.5,total=4885,seq=4885,errors=0,resets=0
+23.046000,STAT,hz=221.5,total=5107,seq=5107,errors=0,resets=0
+24.046000,STAT,hz=221.5,total=5329,seq=5329,errors=0,resets=0
+25.046000,STAT,hz=221.5,total=5551,seq=5551,errors=0,resets=0
+26.062000,STAT,hz=221.5,total=5773,seq=5773,errors=0,resets=0
+27.062000,STAT,hz=221.5,total=5995,seq=5995,errors=0,resets=0
+28.062000,STAT,hz=221.5,total=6217,seq=6217,errors=0,resets=0
+29.062000,STAT,hz=221.5,total=6439,seq=6439,errors=0,resets=0

@@ -1,3 +1,5 @@
 Thumbs.db
 Desktop.ini
 *.tmp
+__pycache__/
+*.pyc
