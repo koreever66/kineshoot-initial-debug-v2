@@ -11,6 +11,7 @@
 - `tools/project_metadata.py`
 - `tools/requirements.txt`
 - `project.json`
+- `docs/CANONICAL_BASELINE.md`
 - `docs/INTERFACE.md`
 - `docs/SOFTWARE_PROTOCOL.md`
 - v2 串口采集数据、v4 Flash 采集数据和调试报告
@@ -23,6 +24,7 @@
 - `README.md` 增加 v2、v3、v4 使用说明。
 - `DEBUG_NOTES.md` 增加稳定链路、无绳记录和动作测试记录。
 - 串口记录和 Flash 导出自动附带硬件版本、软件版本、接口版本和 Git 提交。
+- 冻结基线 `KB-2026-09-15-H1-F4-I1`，供软件和硬件对话共同引用。
 
 ### Fixed
 

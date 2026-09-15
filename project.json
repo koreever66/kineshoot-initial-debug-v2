@@ -1,5 +1,8 @@
 {
   "project": "kineshoot",
+  "baseline_id": "KB-2026-09-15-H1-F4-I1",
+  "baseline_status": "frozen",
+  "baseline_document": "docs/CANONICAL_BASELINE.md",
   "interface_revision": "I1",
   "hardware_revision": "H1",
   "software_revision": "F4",
