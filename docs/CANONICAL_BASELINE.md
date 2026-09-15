@@ -218,6 +218,18 @@ USB 线不拉主板接口
 
 ## 七、给硬件对话的固定约束
 
+硬件代码和记录放在独立仓库：
+
+```text
+https://github.com/koreever66/kineshoot-initial-debug-v1
+```
+
+软件、接口和数据基线以本仓库为准：
+
+```text
+https://github.com/koreever66/kineshoot-initial-debug-v2
+```
+
 硬件型号、连接器和机械结构可以变化，但 H2 必须继续满足：
 
 ```text
