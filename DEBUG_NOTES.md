@@ -585,3 +585,44 @@ clipped samples         0
 data/flash_v4_static_retest_001.csv
 data/flash_v4_strength_retest_002.csv
 ```
+
+## 八、2026-09-16 六轮连续性复测
+
+测试条件：
+
+```text
+H1 六线直连
+5V 充电宝
+F4 固件
+6 轮连续无绳记录
+```
+
+结果：
+
+| 轮次 | 行数 | 采样率 | 最大间隔 |
+|---:|---:|---:|---:|
+| 1 | 2269 | 226.846 Hz | 5.908 ms |
+| 2 | 2269 | 226.854 Hz | 5.844 ms |
+| 3 | 2269 | 226.882 Hz | 6.110 ms |
+| 4 | 2269 | 226.877 Hz | 6.350 ms |
+| 5 | 2269 | 226.893 Hz | 5.844 ms |
+| 6 | 2270 | 226.931 Hz | 5.992 ms |
+
+全部通过：
+
+```text
+gaps >= 10 ms           0
+gaps >= 20 ms           0
+sequence discontinuities 0
+all-zero samples        0
+clipped samples         0
+resets                  0
+```
+
+前 0.5 秒的角速度峰值来自按 BOOT 时的手部扰动，第 1 秒以后六轮均恢复到约 1.1 dps 的静止水平。
+
+数据目录：
+
+```text
+data/raw/20260916/
+```

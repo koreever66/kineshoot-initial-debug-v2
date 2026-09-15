@@ -171,6 +171,20 @@ errors                  0
 resets                  0
 ```
 
+### 六轮连续性基准
+
+```text
+directory               data/raw/20260916/
+rounds                  6
+rows per round          2269-2270
+sample rate             226.846-226.931 Hz
+maximum interval        5.844-6.350 ms
+gaps >= 10 ms           0
+sequence discontinuities 0
+errors                  0
+resets                  0
+```
+
 ### 模拟投篮基准
 
 ```text
