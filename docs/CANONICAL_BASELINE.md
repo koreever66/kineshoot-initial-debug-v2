@@ -185,6 +185,21 @@ errors                  0
 resets                  0
 ```
 
+### 三组小幅动态基准
+
+```text
+directory               data/raw/20260916/
+rounds                  3
+rows per round          2269-2270
+sample rate             226.854-226.940 Hz
+maximum interval        5.843-6.360 ms
+gyro magnitude max      263.49-388.66 dps
+gaps >= 10 ms           0
+errors                  0
+resets                  0
+clipped samples         0
+```
+
 ### 模拟投篮基准
 
 ```text
