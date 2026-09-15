@@ -69,6 +69,13 @@ data/raw/20260916/
 
 ### 三组小幅动态复测
 
+数据来源：
+
+```text
+power_source = computer_usb
+trigger_source = serial_start
+```
+
 | 文件 | 行数 | 采样率 | 最大间隔 | 角速度峰值 | 结果 |
 |---|---:|---:|---:|---:|---|
 | `dynamic_run01_round01.csv` | 2269 | 226.877 Hz | 6.360 ms | 263.49 dps | 通过 |

@@ -44,6 +44,16 @@ The initial peaks within the first 0.5 seconds match the physical BOOT button pr
 
 Three additional 10-second captures used the requested motion sequence:
 
+Power and trigger provenance:
+
+```text
+power_source = computer_usb
+trigger_source = serial_start
+```
+
+These dynamic files are not a battery-powered comparison. They validate the
+sampling and export path while powered by the computer.
+
 ```text
 0-2 s: still
 2-5 s: wrist flexion and forearm rotation

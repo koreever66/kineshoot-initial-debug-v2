@@ -45,6 +45,8 @@ def parse_args():
     parser.add_argument("--mount-position")
     parser.add_argument("--test-type")
     parser.add_argument("--operator")
+    parser.add_argument("--power-source")
+    parser.add_argument("--trigger-source")
     return parser.parse_args()
 
 
@@ -210,6 +212,8 @@ def main():
                 mount_position=args.mount_position,
                 test_type=args.test_type,
                 operator=args.operator,
+                power_source=args.power_source,
+                trigger_source=args.trigger_source,
             )
             metadata.update(
                 {

@@ -50,6 +50,8 @@ seq,timestamp_us,ax_mg,ay_mg,az_mg,gx_dps,gy_dps,gz_dps,temp_c
   "mount_position": "wrist_dorsal",
   "test_type": "real_shot",
   "operator": "kore",
+  "power_source": "power_bank",
+  "trigger_source": "boot_button",
   "git_sha": "...",
   "remote_path": "/capture_001.csv",
   "remote_size": 137000,
@@ -66,7 +68,9 @@ python tools\flash_export.py `
   --hardware-revision H2 `
   --mount-position wrist_dorsal `
   --test-type real_shot `
-  --operator kore
+  --operator kore `
+  --power-source power_bank `
+  --trigger-source boot_button
 ```
 
 每次导出建议使用独立会话目录，避免远程文件名重新从 `capture_001` 开始后覆盖本地历史：
