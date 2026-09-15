@@ -69,6 +69,23 @@ python tools\flash_export.py `
   --operator kore
 ```
 
+每次导出建议使用独立会话目录，避免远程文件名重新从 `capture_001` 开始后覆盖本地历史：
+
+```powershell
+python tools\flash_export.py `
+  --port COM5 `
+  --output data\raw `
+  --delete-after-download `
+  --session-dir
+```
+
+输出示例：
+
+```text
+data/raw/session_20260916_153000/capture_001.csv
+data/raw/session_20260916_153000/capture_002.csv
+```
+
 ## 数据目录约定
 
 ```text

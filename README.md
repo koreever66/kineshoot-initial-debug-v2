@@ -110,6 +110,12 @@ v3 使用 LittleFS 将数据保存在 ESP32 Flash 中，不依赖电脑持续连
 python tools\flash_export.py --port COM5 --baud 230400 --output data
 ```
 
+推荐导出时使用独立会话目录，避免同名文件覆盖：
+
+```powershell
+python tools\flash_export.py --port COM5 --baud 230400 --output data\raw --delete-after-download --session-dir
+```
+
 导出后可继续使用：
 
 ```powershell

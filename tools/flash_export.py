@@ -31,6 +31,11 @@ def parse_args():
         help="Delete each capture from ESP32 after successful download",
     )
     parser.add_argument(
+        "--session-dir",
+        action="store_true",
+        help="Create a timestamped subdirectory for each export session",
+    )
+    parser.add_argument(
         "--ready-timeout",
         type=float,
         default=10.0,
@@ -167,7 +172,14 @@ def delete_remote_file(ser, remote_path):
 def main():
     args = parse_args()
     output_directory = Path(args.output).expanduser()
+    if args.session_dir:
+        if output_directory.suffix.lower() == ".csv":
+            raise SystemExit("--session-dir cannot be used with a CSV file output.")
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_directory = output_directory / f"session_{stamp}"
+
     output_directory.mkdir(parents=True, exist_ok=True)
+    print(f"Export session: {output_directory}")
 
     print(f"Opening {args.port} at {args.baud} baud")
     with serial.Serial(args.port, args.baud, timeout=0.25) as ser:
