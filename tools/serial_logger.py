@@ -9,8 +9,10 @@ from pathlib import Path
 
 import serial
 
+from project_metadata import build_capture_metadata, find_project_root
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+
+REPO_ROOT = find_project_root(Path(__file__).resolve().parent)
 DEFAULT_OUTPUT = REPO_ROOT / "data"
 
 
@@ -50,6 +52,10 @@ def parse_args():
         default=2000.0,
         help="Angular velocity magnitude considered clipped",
     )
+    parser.add_argument("--hardware-revision")
+    parser.add_argument("--mount-position")
+    parser.add_argument("--test-type")
+    parser.add_argument("--operator")
     return parser.parse_args()
 
 
@@ -306,6 +312,13 @@ def main():
         ),
         "end_time": datetime.now().astimezone().isoformat(),
         "config": config_line,
+        "project": build_capture_metadata(
+            REPO_ROOT,
+            hardware_revision=args.hardware_revision,
+            mount_position=args.mount_position,
+            test_type=args.test_type,
+            operator=args.operator,
+        ),
         "quality": quality,
     }
 

@@ -8,7 +8,11 @@
 - `firmware/imu_flash_logger_v3/`
 - `firmware/imu_flash_logger_v4/`
 - `tools/flash_export.py`
+- `tools/project_metadata.py`
 - `tools/requirements.txt`
+- `project.json`
+- `docs/INTERFACE.md`
+- `docs/SOFTWARE_PROTOCOL.md`
 - v2 串口采集数据、v4 Flash 采集数据和调试报告
 
 ### Changed
@@ -18,6 +22,7 @@
 - `tools/start_logging.bat` 改为相对路径并默认使用 `230400`。
 - `README.md` 增加 v2、v3、v4 使用说明。
 - `DEBUG_NOTES.md` 增加稳定链路、无绳记录和动作测试记录。
+- 串口记录和 Flash 导出自动附带硬件版本、软件版本、接口版本和 Git 提交。
 
 ### Fixed
 

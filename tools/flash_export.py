@@ -1,12 +1,16 @@
 # encoding: utf-8
 import argparse
+import json
 import time
+from datetime import datetime
 from pathlib import Path
 
 import serial
 
+from project_metadata import build_capture_metadata, find_project_root
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+
+REPO_ROOT = find_project_root(Path(__file__).resolve().parent)
 DEFAULT_OUTPUT = REPO_ROOT / "data"
 
 
@@ -30,8 +34,12 @@ def parse_args():
         "--ready-timeout",
         type=float,
         default=10.0,
-        help="Seconds to wait for IMU_FLASH_V3_READY",
+        help="Seconds to wait for IMU_FLASH_V3_READY or IMU_FLASH_V4_READY",
     )
+    parser.add_argument("--hardware-revision")
+    parser.add_argument("--mount-position")
+    parser.add_argument("--test-type")
+    parser.add_argument("--operator")
     return parser.parse_args()
 
 
@@ -184,7 +192,27 @@ def main():
                 remote["size"],
                 output_directory,
             )
+            metadata = build_capture_metadata(
+                REPO_ROOT,
+                hardware_revision=args.hardware_revision,
+                mount_position=args.mount_position,
+                test_type=args.test_type,
+                operator=args.operator,
+            )
+            metadata.update(
+                {
+                    "remote_path": remote["path"],
+                    "remote_size": remote["size"],
+                    "local_path": str(local_path),
+                    "downloaded_at": datetime.now().astimezone().isoformat(),
+                }
+            )
+            metadata_path = local_path.with_suffix(".meta.json")
+            with metadata_path.open("w", encoding="utf-8") as stream:
+                json.dump(metadata, stream, ensure_ascii=False, indent=2)
+                stream.write("\n")
             print(f"Downloaded: {local_path}")
+            print(f"Metadata: {metadata_path}")
 
             if args.delete_after_download:
                 delete_remote_file(ser, remote["path"])
