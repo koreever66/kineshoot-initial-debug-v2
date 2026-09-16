@@ -228,6 +228,23 @@ status                  power and write pass
 motion status           no motion in the intended 2-5 second window
 ```
 
+### 充电宝 BOOT 投篮动作基准
+
+```text
+directory               data/raw/20260916/
+files                   powerbank_boot_motion_run02_round01-03.csv
+power_source            power_bank
+trigger_source          boot_button
+round 1 gyro max        175.98 dps
+round 2 gyro max        271.98 dps
+round 3 gyro max        466.36 dps
+round 3 accel max       3270.16 mg
+gaps >= 10 ms           0
+errors                  0
+resets                  0
+clipped samples         0
+```
+
 ### 模拟投篮基准
 
 ```text

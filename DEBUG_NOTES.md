@@ -678,3 +678,29 @@ BOOT 触发正常
 本地写盘正常
 本组不能作为动态动作数据
 ```
+
+### 充电宝 BOOT 动作第二轮
+
+结果：
+
+| 轮次 | 动作 | 角速度峰值 | 加速度模长峰值 | 削顶 |
+|---:|---|---:|---:|---|
+| 1 | 辅助动作 | 175.98 dps | 1315.89 mg | 无 |
+| 2 | 完整上肢投篮 | 271.98 dps | 1530.47 mg | 无 |
+| 3 | 站立起跳投篮 | 466.36 dps | 3270.16 mg | 无 |
+
+三轮均：
+
+```text
+rows                     2269-2270
+sample rate              226.886-226.924 Hz
+maximum interval         5.844-6.335 ms
+gaps >= 10 ms            0
+sequence discontinuities 0
+resets                   0
+all-zero samples         0
+fixed saturation         0
+clipped samples          0
+```
+
+该组数据可作为充电宝供电条件下的有效模拟投篮基线。

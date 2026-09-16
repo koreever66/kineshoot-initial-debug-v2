@@ -100,3 +100,26 @@ Conclusion:
 
 - Power-bank supply and BOOT-triggered local recording work.
 - These files must not be used as dynamic-motion data.
+
+## Power-Bank + BOOT Motion Run 02
+
+Three captures:
+
+| File | Rows | Sample rate | Maximum interval | Gyro max | Acc magnitude max | Result |
+|---|---:|---:|---:|---:|---:|---|
+| `powerbank_boot_motion_run02_round01.csv` | 2269 | 226.886 Hz | 5.844 ms | 175.98 dps | 1315.89 mg | Pass |
+| `powerbank_boot_motion_run02_round02.csv` | 2270 | 226.924 Hz | 6.335 ms | 271.98 dps | 1530.47 mg | Pass |
+| `powerbank_boot_motion_run02_round03.csv` | 2269 | 226.888 Hz | 5.844 ms | 466.36 dps | 3270.16 mg | Pass |
+
+Round 2 used a complete upper-body shooting motion. Round 3 used a standing
+jump shooting motion. Both returned to the starting posture during the
+5-10 second window.
+
+All three files:
+
+- No gaps above 10 ms.
+- No sequence discontinuity.
+- No reset or communication error.
+- No all-zero segment.
+- No fixed saturation.
+- No clipping at +/-16g or +/-2000dps.
