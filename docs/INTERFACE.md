@@ -61,7 +61,8 @@ RGB LED:    WS2812B，GPIO48
 
 ```text
 确认 BOOT 松开
-按一次 RST
+检查 RGB 蓝色是否已经常亮
+蓝灯不亮时按一次 RST
 等待 RGB 蓝色常亮
 ```
 

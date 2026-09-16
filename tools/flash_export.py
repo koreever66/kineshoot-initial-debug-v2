@@ -47,6 +47,7 @@ def parse_args():
     parser.add_argument("--operator")
     parser.add_argument("--power-source")
     parser.add_argument("--trigger-source")
+    parser.add_argument("--motion-speed")
     return parser.parse_args()
 
 
@@ -214,6 +215,7 @@ def main():
                 operator=args.operator,
                 power_source=args.power_source,
                 trigger_source=args.trigger_source,
+                motion_speed=args.motion_speed,
             )
             metadata.update(
                 {

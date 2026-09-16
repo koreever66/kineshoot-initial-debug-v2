@@ -43,6 +43,7 @@ def build_capture_metadata(
     operator=None,
     power_source=None,
     trigger_source=None,
+    motion_speed=None,
 ):
     project_state = load_project_state(repo_root)
 
@@ -64,6 +65,7 @@ def build_capture_metadata(
         "operator": operator,
         "power_source": power_source,
         "trigger_source": trigger_source,
+        "motion_speed": motion_speed,
         "git_sha": get_git_revision(repo_root),
         "metadata_created_at": datetime.now().astimezone().isoformat(),
     }

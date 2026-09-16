@@ -124,16 +124,17 @@ temp_c
 ```text
 1. 连接充电宝
 2. 确认 BOOT 没有被按住
-3. 按一次 RST，确保开发板退出复位或下载状态
-4. 等待 RGB 蓝色常亮，确认 F4 已进入主循环
-5. 等待约 2-5 秒
-6. 短按 BOOT 并立即松开
-7. RGB 变为红色
-8. 前 1-2 秒保持静止
-9. 执行测试动作
-10. 等待 10 秒记录结束
-11. 看到 RGB 绿色后恢复蓝色，表示写盘完成
-12. 断开充电宝
+3. 检查 RGB 是否蓝色常亮
+4. 如果蓝灯不亮，按一次 RST
+5. 必须确认 RGB 蓝色常亮，再进入主循环
+6. 等待约 2-5 秒
+7. 短按 BOOT 并立即松开
+8. RGB 变为红色
+9. 前 1-2 秒保持静止
+10. 执行测试动作
+11. 等待 10 秒记录结束
+12. 看到 RGB 绿色后恢复蓝色，表示写盘完成
+13. 断开充电宝
 ```
 
 ### 导出
@@ -152,9 +153,10 @@ temp_c
 从电脑切换到充电宝，或从充电宝切换回电脑后：
 
 ```text
-必须先按一次 RST
-必须确认 RGB 蓝色常亮
-再开始 BOOT 记录或导出
+先检查 RGB 蓝色状态
+蓝灯亮时可以直接继续
+蓝灯不亮时按一次 RST
+确认蓝色常亮后再开始 BOOT 记录或导出
 ```
 
 不可控红色电源灯亮只能说明开发板有电，不能说明 F4 已经运行。
@@ -273,6 +275,26 @@ rows per round          2269-2270
 sample rate             226.845-226.939 Hz
 maximum interval        5.844-6.331 ms
 gyro after 1s mean      1.227-1.543 dps
+gaps >= 10 ms           0
+errors                  0
+resets                  0
+clipped samples         0
+```
+
+### 动作速度对照 Run 03
+
+```text
+directory               data/raw/20260916/
+files                   comparison_run03_static.csv
+                        comparison_run03_slow.csv
+                        comparison_run03_medium.csv
+                        comparison_run03_fast.csv
+power_source            power_bank
+trigger_source          boot_button
+slow gyro max           198.50 dps
+medium gyro max         425.75 dps
+fast gyro max           433.32 dps
+maximum interval        5.844-6.266 ms
 gaps >= 10 ms           0
 errors                  0
 resets                  0

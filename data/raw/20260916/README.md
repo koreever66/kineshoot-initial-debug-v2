@@ -144,3 +144,26 @@ All five captures:
 - No all-zero segment.
 - No fixed saturation.
 - No clipping at +/-16g or +/-2000dps.
+
+## Comparison Run 03
+
+Files:
+
+| File | Description | Rows | Sample rate | Max interval | Gyro max | Acc magnitude max |
+|---|---|---:|---:|---:|---:|---:|
+| `comparison_run03_static.csv` | Static control | 2269 | 226.890 Hz | 5.844 ms | 90.82 dps | 1058.76 mg |
+| `comparison_run03_medium.csv` | Medium-speed shot | 2269 | 226.877 Hz | 6.251 ms | 425.75 dps | 2045.14 mg |
+| `comparison_run03_slow.csv` | Slow shot | 2269 | 226.878 Hz | 6.166 ms | 198.50 dps | 1353.99 mg |
+| `comparison_run03_fast.csv` | Fast shot | 2269 | 226.916 Hz | 6.266 ms | 433.32 dps | 2308.26 mg |
+
+All four captures:
+
+- No gaps above 10 ms.
+- No sequence discontinuity.
+- No reset or communication error.
+- No all-zero segment.
+- No fixed saturation.
+- No clipping at +/-16g or +/-2000dps.
+
+The static record was taken when the RGB LED was already blue after power
+connection, demonstrating that RST is only required when the blue LED is off.
