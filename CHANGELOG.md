@@ -31,6 +31,7 @@
 - 采集元数据增加 `power_source` 和 `trigger_source`。
 - 记录开发板双 USB-C 口、BOOT/RST、GPIO48 WS2812B 和不可控电源红灯的硬件接口信息。
 - 增加 `imu_flash_logger_v4_status` 无绳状态灯诊断固件。
+- 固化供电源切换后的 RST 复位和蓝灯确认流程。
 
 ### Fixed
 
