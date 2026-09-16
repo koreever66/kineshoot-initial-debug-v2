@@ -123,3 +123,24 @@ All three files:
 - No all-zero segment.
 - No fixed saturation.
 - No clipping at +/-16g or +/-2000dps.
+
+## Static Control Run 02
+
+Five static captures:
+
+| File | Rows | Sample rate | Maximum interval | Gyro after 1 s mean | Gyro after 1 s max | Result |
+|---|---:|---:|---:|---:|---:|---|
+| `static_control_run02_round01.csv` | 2269 | 226.845 Hz | 5.982 ms | 1.543 dps | 15.054 dps | Pass |
+| `static_control_run02_round02.csv` | 2270 | 226.924 Hz | 6.331 ms | 1.422 dps | 10.101 dps | Pass |
+| `static_control_run02_round03.csv` | 2270 | 226.934 Hz | 5.844 ms | 1.483 dps | 12.968 dps | Pass |
+| `static_control_run02_round04.csv` | 2270 | 226.939 Hz | 5.844 ms | 1.347 dps | 8.260 dps | Pass |
+| `static_control_run02_round05.csv` | 2270 | 226.927 Hz | 6.228 ms | 1.227 dps | 4.182 dps | Pass |
+
+All five captures:
+
+- No gaps above 10 ms.
+- No sequence discontinuity.
+- No reset or communication error.
+- No all-zero segment.
+- No fixed saturation.
+- No clipping at +/-16g or +/-2000dps.

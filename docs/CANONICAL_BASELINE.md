@@ -262,6 +262,23 @@ resets                  0
 clipped samples         0
 ```
 
+### 五组静止对照 Run 02
+
+```text
+directory               data/raw/20260916/
+files                   static_control_run02_round01-05.csv
+power_source            power_bank
+trigger_source          boot_button
+rows per round          2269-2270
+sample rate             226.845-226.939 Hz
+maximum interval        5.844-6.331 ms
+gyro after 1s mean      1.227-1.543 dps
+gaps >= 10 ms           0
+errors                  0
+resets                  0
+clipped samples         0
+```
+
 ### 模拟投篮基准
 
 ```text

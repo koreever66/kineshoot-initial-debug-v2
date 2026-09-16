@@ -111,6 +111,18 @@ powerbank_boot_run01_round03.csv
 
 第二组为上肢完整投篮动作，第三组为站立起跳投篮。两组均回到起始姿势，所有记录无缺口、复位、全零、固定饱和或削顶。
 
+### 五组静止对照 Run 02
+
+| 文件 | 行数 | 采样率 | 最大间隔 | 1 秒后角速度均值 | 结果 |
+|---|---:|---:|---:|---:|---|
+| `static_control_run02_round01.csv` | 2269 | 226.845 Hz | 5.982 ms | 1.543 dps | 通过 |
+| `static_control_run02_round02.csv` | 2270 | 226.924 Hz | 6.331 ms | 1.422 dps | 通过 |
+| `static_control_run02_round03.csv` | 2270 | 226.934 Hz | 5.844 ms | 1.483 dps | 通过 |
+| `static_control_run02_round04.csv` | 2270 | 226.939 Hz | 5.844 ms | 1.347 dps | 通过 |
+| `static_control_run02_round05.csv` | 2270 | 226.927 Hz | 6.228 ms | 1.227 dps | 通过 |
+
+五组均无缺口、序号跳变、复位、全零、固定饱和和削顶。
+
 ## 主要动作峰值
 
 | 数据 | 角速度模长峰值 | 加速度模长峰值 | 削顶 |
