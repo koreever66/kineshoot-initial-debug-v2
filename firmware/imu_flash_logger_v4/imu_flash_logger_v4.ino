@@ -3,6 +3,12 @@
 #include <esp_timer.h>
 #include <stdlib.h>
 
+#ifdef RGB_BUILTIN
+#define STATUS_LED_PIN RGB_BUILTIN
+#else
+#define STATUS_LED_PIN 48
+#endif
+
 #define I2C_SDA_PIN 8
 #define I2C_SCL_PIN 9
 #define AD0_VAL 0
@@ -39,6 +45,10 @@ size_t commandLength = 0;
 
 static int16_t be16(const uint8_t *data) {
   return (int16_t)(((uint16_t)data[0] << 8) | data[1]);
+}
+
+static void setStatusColor(uint8_t red, uint8_t green, uint8_t blue) {
+  rgbLedWrite(STATUS_LED_PIN, red, green, blue);
 }
 
 static bool configureImu() {
@@ -307,6 +317,7 @@ static bool recordCapture() {
     return false;
   }
 
+  setStatusColor(64, 0, 0);
   const int64_t startUs = esp_timer_get_time();
   const int64_t endUs = startUs + (int64_t)CAPTURE_SECONDS * 1000000;
   const uint32_t errorsAtStart = totalErrors;
@@ -394,6 +405,9 @@ static bool recordCapture() {
   const int64_t writeEndUs = esp_timer_get_time();
   if (writeFailed) {
     LittleFS.remove(path);
+    setStatusColor(64, 0, 0);
+  } else {
+    setStatusColor(0, 64, 0);
   }
 
   Serial.printf(
@@ -408,6 +422,8 @@ static bool recordCapture() {
       (unsigned long)(totalResets - resetsAtStart),
       writeFailed ? 1 : 0);
 
+  delay(1000);
+  setStatusColor(0, 0, 32);
   return rows > 0 && !writeFailed && writtenRows == rows;
 }
 
@@ -510,6 +526,7 @@ void setup() {
   }
 
   if (myICM.status != ICM_20948_Stat_Ok) {
+    setStatusColor(64, 0, 0);
     Serial.println("IMU_FLASH_V4_FATAL");
     while (true) {
       delay(1000);
@@ -520,6 +537,7 @@ void setup() {
   Serial.println(
       "Commands: LIST, INFO, START, DUMP /capture_001.csv, "
       "DELETE /capture_001.csv");
+  setStatusColor(0, 0, 32);
 }
 
 void loop() {
