@@ -84,6 +84,23 @@ trigger_source = serial_start
 
 三组均无缺口、序号跳变、复位、全零、固定饱和和削顶。
 
+### 充电宝与 BOOT 验证
+
+```text
+power_source = power_bank
+trigger_source = boot_button
+```
+
+文件：
+
+```text
+powerbank_boot_run01_round01.csv
+powerbank_boot_run01_round02.csv
+powerbank_boot_run01_round03.csv
+```
+
+三份文件均成功写入，无采样缺口、复位或通信错误。但 2-5 秒动作窗口内没有明显运动，因此这组数据只用于验证充电宝供电和 BOOT 触发，不用于动态分析。
+
 ## 主要动作峰值
 
 | 数据 | 角速度模长峰值 | 加速度模长峰值 | 削顶 |

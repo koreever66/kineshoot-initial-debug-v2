@@ -74,3 +74,29 @@ All three captures passed:
 - No all-zero segment.
 - No fixed saturation.
 - No clipping at +/-16g or +/-2000dps.
+
+## Power-Bank + BOOT Validation
+
+Three captures used:
+
+```text
+power_source = power_bank
+trigger_source = boot_button
+```
+
+Files:
+
+```text
+powerbank_boot_run01_round01.csv
+powerbank_boot_run01_round02.csv
+powerbank_boot_run01_round03.csv
+```
+
+All three files were saved successfully and contain no communication errors.
+However, the requested motion did not occur during the 2-5 second window.
+Gyro magnitude remained near 1.1 dps after the BOOT-button transient.
+
+Conclusion:
+
+- Power-bank supply and BOOT-triggered local recording work.
+- These files must not be used as dynamic-motion data.

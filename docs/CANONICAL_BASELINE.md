@@ -217,6 +217,17 @@ resets                  0
 clipped samples         0
 ```
 
+### 充电宝与 BOOT 供电验证
+
+```text
+directory               data/raw/20260916/
+files                   powerbank_boot_run01_round01-03.csv
+power_source            power_bank
+trigger_source          boot_button
+status                  power and write pass
+motion status           no motion in the intended 2-5 second window
+```
+
 ### 模拟投篮基准
 
 ```text

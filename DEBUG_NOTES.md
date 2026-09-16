@@ -655,3 +655,26 @@ all-zero samples        0
 fixed saturation        0
 clipped samples         0
 ```
+
+### 充电宝 + BOOT 写入验证
+
+```text
+power_source = power_bank
+trigger_source = boot_button
+```
+
+结果：
+
+- 三份文件均成功写入 LittleFS。
+- 三份文件均无通信缺口、序号跳变、复位、全零、固定饱和和削顶。
+- 第 2-5 秒没有明显动作，角速度约 1.1 dps。
+- 角速度峰值出现在按 BOOT 后的前 0.6 秒，属于按键扰动。
+
+结论：
+
+```text
+充电宝供电正常
+BOOT 触发正常
+本地写盘正常
+本组不能作为动态动作数据
+```
