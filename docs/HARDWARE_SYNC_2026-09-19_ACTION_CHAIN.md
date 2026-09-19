@@ -82,3 +82,38 @@ no repeated USB startup retries
 ```
 
 Only after this gate should the system move to court testing with real shots.
+
+## Battery and Boost Integration
+
+The power bank remains the validated field-capture baseline. Battery power is a
+new integration branch and must not replace the power bank until it passes an
+independent validation sequence.
+
+Planned main power path:
+
+```text
+protected 3.7 V battery
+-> TP4057 BAT+ / BAT-
+-> SS-12E07G4 3 A switch on battery positive
+-> TPS61088 fixed 5 V boost
+-> ESP32 5V and GND
+```
+
+The SS12D07VG4 0.5 A switch is reserved for the low-current P-MOSFET fallback
+control path and must not carry the main boost input current.
+
+Required validation:
+
+1. Verify battery polarity and 3.0-4.2 V open-circuit voltage.
+2. Test TP4057 charging alone at approximately 500 mA.
+3. Verify TP4057 output polarity and approximately 4.2 V full-charge voltage.
+4. Add SS-12E07G4 and measure voltage drop under load.
+5. Verify TPS61088 no-load output is 5.00 V.
+6. Run a short 0.5-1 A load test and keep output at or above approximately
+   4.85 V.
+7. Connect boost output only to ESP32 5V and GND, never to 3V3 or ICM VCC.
+8. Confirm no brownout, ICM VCC approximately 3.3 V, and stable I2C startup.
+9. Run three static and two arm-raise captures on battery before field use.
+
+TP4057 has no load sharing. Keep the ESP32 load off while charging and never
+connect USB 5 V and the battery boost output at the same time.
