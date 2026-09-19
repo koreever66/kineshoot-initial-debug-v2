@@ -323,6 +323,8 @@ static bool recordCapture() {
   const uint32_t errorsAtStart = totalErrors;
   const uint32_t resetsAtStart = totalResets;
   uint32_t rows = 0;
+  uint32_t noDataPolls = 0;
+  uint32_t noDataReads = 0;
   bool writeFailed = false;
 
   Serial.printf(
@@ -333,8 +335,9 @@ static bool recordCapture() {
   while (esp_timer_get_time() < endUs) {
     if (!myICM.dataReady()) {
       const ICM_20948_Status_e readyStatus = myICM.status;
-      if (readyStatus != ICM_20948_Stat_Ok &&
-          readyStatus != ICM_20948_Stat_NoData) {
+      if (readyStatus == ICM_20948_Stat_NoData) {
+        noDataPolls++;
+      } else if (readyStatus != ICM_20948_Stat_Ok) {
         reportFault(readyStatus, esp_timer_get_time());
       }
       delay(1);
@@ -345,6 +348,11 @@ static bool recordCapture() {
     const int64_t timestampUs = esp_timer_get_time();
     const ICM_20948_Status_e status =
         myICM.read((uint8_t)AGB0_REG_ACCEL_XOUT_H, raw, sizeof(raw));
+
+    if (status == ICM_20948_Stat_NoData) {
+      noDataReads++;
+      continue;
+    }
 
     if (status != ICM_20948_Stat_Ok) {
       reportFault(status, timestampUs);
@@ -403,7 +411,8 @@ static bool recordCapture() {
   free(samples);
 
   const int64_t writeEndUs = esp_timer_get_time();
-  if (writeFailed) {
+  const bool noSamples = rows == 0;
+  if (writeFailed || noSamples) {
     LittleFS.remove(path);
     setStatusColor(64, 0, 0);
   } else {
@@ -412,7 +421,8 @@ static bool recordCapture() {
 
   Serial.printf(
       "CAPTURE_DONE,file=%s,samples=%lu,written=%lu,duration_ms=%.1f,"
-      "write_ms=%.1f,errors=%lu,resets=%lu,write_failed=%u\n",
+      "write_ms=%.1f,errors=%lu,resets=%lu,write_failed=%u,no_samples=%u,"
+      "no_data_polls=%lu,no_data_reads=%lu\n",
       path,
       (unsigned long)rows,
       (unsigned long)writtenRows,
@@ -420,7 +430,10 @@ static bool recordCapture() {
       (double)(writeEndUs - writeStartUs) / 1000.0,
       (unsigned long)(totalErrors - errorsAtStart),
       (unsigned long)(totalResets - resetsAtStart),
-      writeFailed ? 1 : 0);
+      writeFailed ? 1 : 0,
+      noSamples ? 1 : 0,
+      (unsigned long)noDataPolls,
+      (unsigned long)noDataReads);
 
   delay(1000);
   setStatusColor(0, 0, 32);
