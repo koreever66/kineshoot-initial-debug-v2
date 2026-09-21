@@ -1,0 +1,34 @@
+{
+  "session": "session_20260920_195803",
+  "body_axis_definition": {
+    "x": "ulnar direction toward the right hand",
+    "y": "toward the hand",
+    "z": "toward the back of the hand"
+  },
+  "sensor_to_body_rotation": [
+    [0, -1, 0],
+    [0, 0, -1],
+    [1, 0, 0]
+  ],
+  "axis_mapping": {
+    "body_x": "sensor_-y",
+    "body_y": "sensor_-z",
+    "body_z": "sensor_+x"
+  },
+  "rotation_test_evidence": {
+    "around_body_y": {"dominant_sensor_axis": "z", "signed_mean_dps": -24.17, "peak_dps": 227.32},
+    "around_body_x": {"dominant_sensor_axis": "y", "signed_mean_dps": -19.82, "peak_dps": 187.62},
+    "around_body_z": {"dominant_sensor_axis": "x", "signed_mean_dps": 14.72, "peak_dps": 205.49}
+  },
+  "forward_axis_test": {
+    "body_x_component_mg": 47.49,
+    "body_minus_x_component_mg": 27.07,
+    "body_y_component_mg": 280.90,
+    "body_minus_y_component_mg": 250.05,
+    "body_z_component_mg": 13.57,
+    "body_minus_z_component_mg": 117.51,
+    "note": "Target axes were placed forward and approximately horizontal. Gravity should be nearly perpendicular to the target axis; X and Z tests are close, while Y tests show about 14-16 degrees of tilt."
+  },
+  "six_face_gravity_calibration_complete": false,
+  "notes": "The three rotation tests provide a consistent mounting rotation. The first six forward-axis captures are valid but are not a complete six-face calibration."
+}
