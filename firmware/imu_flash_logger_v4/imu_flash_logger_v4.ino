@@ -21,8 +21,7 @@
 #define COMMAND_BUFFER_SIZE 64
 #define MAX_SAMPLES (CAPTURE_SECONDS * 260 + 100)
 #define MIN_FREE_BYTES 300000UL
-#define TELEMETRY_INTERVAL_MS 1000
-#define TELEMETRY_MAX_SAMPLES (CAPTURE_SECONDS + 4)
+#define TELEMETRY_MAX_SAMPLES 4
 
 ICM_20948_I2C myICM;
 
@@ -345,7 +344,6 @@ static bool recordCapture() {
   const size_t freeAtStart = freeBytes;
   TelemetrySample telemetry[TELEMETRY_MAX_SAMPLES];
   uint32_t telemetryRows = 0;
-  uint32_t nextTelemetryMs = TELEMETRY_INTERVAL_MS;
 
   RawSample *samples = (RawSample *)malloc(sizeof(RawSample) * MAX_SAMPLES);
   if (samples == NULL) {
@@ -370,13 +368,6 @@ static bool recordCapture() {
   appendTelemetrySample(telemetry, telemetryRows, 0);
 
   while (esp_timer_get_time() < endUs) {
-    const uint32_t elapsedMs =
-        (uint32_t)((esp_timer_get_time() - startUs) / 1000);
-    if (elapsedMs >= nextTelemetryMs) {
-      appendTelemetrySample(telemetry, telemetryRows, elapsedMs);
-      nextTelemetryMs += TELEMETRY_INTERVAL_MS;
-    }
-
     if (!myICM.dataReady()) {
       const ICM_20948_Status_e readyStatus = myICM.status;
       if (readyStatus == ICM_20948_Stat_NoData) {
@@ -419,10 +410,6 @@ static bool recordCapture() {
   }
 
   const int64_t endTimeUs = esp_timer_get_time();
-  appendTelemetrySample(
-      telemetry,
-      telemetryRows,
-      (uint32_t)((endTimeUs - startUs) / 1000));
   const int64_t writeStartUs = esp_timer_get_time();
 
   File file = LittleFS.open(path, FILE_WRITE);
