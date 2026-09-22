@@ -12,6 +12,7 @@
 - `CAPTURE_DONE` now reports free space before and after capture plus telemetry row count.
 - `INFO` now reports total, used, and free LittleFS bytes.
 - No battery voltage sampling was added; the fixed hardware enclosure remains unchanged.
+- Capture duration reduced from 15 seconds to 12 seconds so at least 30 groups fit comfortably in the current LittleFS partition.
 
 ## 2026-09-15
 
