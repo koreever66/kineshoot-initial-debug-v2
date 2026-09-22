@@ -4,7 +4,7 @@
 
 ### Added
 
-- v4 capture telemetry file `capture_XXX.telemetry.csv` with one sample per second of LittleFS free bytes.
+- v4 capture telemetry file `capture_XXX.telemetry.csv` with LittleFS free bytes at capture start and end.
 - automatic `session_telemetry_report.html` generation during export.
 
 ### Changed
