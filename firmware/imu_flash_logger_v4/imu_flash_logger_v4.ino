@@ -21,6 +21,8 @@
 #define COMMAND_BUFFER_SIZE 64
 #define MAX_SAMPLES (CAPTURE_SECONDS * 260 + 100)
 #define MIN_FREE_BYTES 300000UL
+#define TELEMETRY_INTERVAL_MS 1000
+#define TELEMETRY_MAX_SAMPLES (CAPTURE_SECONDS + 4)
 
 ICM_20948_I2C myICM;
 
@@ -33,6 +35,11 @@ struct RawSample {
   int16_t gy;
   int16_t gz;
   int16_t temp;
+};
+
+struct TelemetrySample {
+  uint32_t elapsedMs;
+  uint32_t freeBytes;
 };
 
 uint32_t totalErrors = 0;
@@ -295,6 +302,30 @@ static void deleteFile(const char *path) {
   }
 }
 
+static void appendTelemetrySample(
+    TelemetrySample *samples,
+    uint32_t &count,
+    uint32_t elapsedMs) {
+  if (count >= TELEMETRY_MAX_SAMPLES) {
+    return;
+  }
+  samples[count].elapsedMs = elapsedMs;
+  samples[count].freeBytes =
+      (uint32_t)(LittleFS.totalBytes() - LittleFS.usedBytes());
+  count++;
+}
+
+static void buildTelemetryPath(
+    const char *capturePath,
+    char *telemetryPath,
+    size_t telemetryPathSize) {
+  snprintf(telemetryPath, telemetryPathSize, "%s", capturePath);
+  char *dot = strrchr(telemetryPath, '.');
+  if (dot != NULL) {
+    strcpy(dot, ".telemetry.csv");
+  }
+}
+
 static bool recordCapture() {
   char path[32];
   if (!findNextCapturePath(path, sizeof(path))) {
@@ -310,6 +341,11 @@ static bool recordCapture() {
         (unsigned long)MIN_FREE_BYTES);
     return false;
   }
+
+  const size_t freeAtStart = freeBytes;
+  TelemetrySample telemetry[TELEMETRY_MAX_SAMPLES];
+  uint32_t telemetryRows = 0;
+  uint32_t nextTelemetryMs = TELEMETRY_INTERVAL_MS;
 
   RawSample *samples = (RawSample *)malloc(sizeof(RawSample) * MAX_SAMPLES);
   if (samples == NULL) {
@@ -331,8 +367,16 @@ static bool recordCapture() {
       "CAPTURE_START,file=%s,seconds=%u\n",
       path,
       CAPTURE_SECONDS);
+  appendTelemetrySample(telemetry, telemetryRows, 0);
 
   while (esp_timer_get_time() < endUs) {
+    const uint32_t elapsedMs =
+        (uint32_t)((esp_timer_get_time() - startUs) / 1000);
+    if (elapsedMs >= nextTelemetryMs) {
+      appendTelemetrySample(telemetry, telemetryRows, elapsedMs);
+      nextTelemetryMs += TELEMETRY_INTERVAL_MS;
+    }
+
     if (!myICM.dataReady()) {
       const ICM_20948_Status_e readyStatus = myICM.status;
       if (readyStatus == ICM_20948_Stat_NoData) {
@@ -375,6 +419,10 @@ static bool recordCapture() {
   }
 
   const int64_t endTimeUs = esp_timer_get_time();
+  appendTelemetrySample(
+      telemetry,
+      telemetryRows,
+      (uint32_t)((endTimeUs - startUs) / 1000));
   const int64_t writeStartUs = esp_timer_get_time();
 
   File file = LittleFS.open(path, FILE_WRITE);
@@ -408,12 +456,45 @@ static bool recordCapture() {
   }
   file.flush();
   file.close();
+
+  const size_t freeAtEnd = LittleFS.totalBytes() - LittleFS.usedBytes();
+  appendTelemetrySample(
+      telemetry,
+      telemetryRows,
+      (uint32_t)((esp_timer_get_time() - startUs) / 1000));
+  char telemetryPath[40];
+  buildTelemetryPath(path, telemetryPath, sizeof(telemetryPath));
+  bool telemetryWriteFailed = false;
+  File telemetryFile = LittleFS.open(telemetryPath, FILE_WRITE);
+  if (!telemetryFile) {
+    telemetryWriteFailed = true;
+  } else {
+    telemetryFile.println("elapsed_ms,free_bytes");
+    for (uint32_t index = 0; index < telemetryRows; index++) {
+      const size_t written = telemetryFile.printf(
+          "%lu,%lu\n",
+          (unsigned long)telemetry[index].elapsedMs,
+          (unsigned long)telemetry[index].freeBytes);
+      if (written == 0) {
+        telemetryWriteFailed = true;
+        break;
+      }
+    }
+    telemetryFile.flush();
+    telemetryFile.close();
+  }
+  if (telemetryWriteFailed && LittleFS.exists(telemetryPath)) {
+    LittleFS.remove(telemetryPath);
+  }
   free(samples);
 
   const int64_t writeEndUs = esp_timer_get_time();
   const bool noSamples = rows == 0;
   if (writeFailed || noSamples) {
     LittleFS.remove(path);
+    if (LittleFS.exists(telemetryPath)) {
+      LittleFS.remove(telemetryPath);
+    }
     setStatusColor(64, 0, 0);
   } else {
     setStatusColor(0, 64, 0);
@@ -422,7 +503,8 @@ static bool recordCapture() {
   Serial.printf(
       "CAPTURE_DONE,file=%s,samples=%lu,written=%lu,duration_ms=%.1f,"
       "write_ms=%.1f,errors=%lu,resets=%lu,write_failed=%u,no_samples=%u,"
-      "no_data_polls=%lu,no_data_reads=%lu\n",
+      "no_data_polls=%lu,no_data_reads=%lu,free_before=%lu,free_after=%lu,"
+      "telemetry_rows=%lu,telemetry_written=%u\n",
       path,
       (unsigned long)rows,
       (unsigned long)writtenRows,
@@ -433,7 +515,11 @@ static bool recordCapture() {
       writeFailed ? 1 : 0,
       noSamples ? 1 : 0,
       (unsigned long)noDataPolls,
-      (unsigned long)noDataReads);
+      (unsigned long)noDataReads,
+      (unsigned long)freeAtStart,
+      (unsigned long)freeAtEnd,
+      (unsigned long)telemetryRows,
+      telemetryWriteFailed ? 0 : 1);
 
   delay(1000);
   setStatusColor(0, 0, 32);
@@ -457,9 +543,10 @@ static void handleCommand(char *command) {
 
   if (strcmp(command, "INFO") == 0) {
     Serial.printf(
-        "INFO,filesystem_total=%lu,filesystem_used=%lu\n",
+        "INFO,filesystem_total=%lu,filesystem_used=%lu,filesystem_free=%lu\n",
         (unsigned long)LittleFS.totalBytes(),
-        (unsigned long)LittleFS.usedBytes());
+        (unsigned long)LittleFS.usedBytes(),
+        (unsigned long)(LittleFS.totalBytes() - LittleFS.usedBytes()));
     return;
   }
 

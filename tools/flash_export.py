@@ -9,6 +9,11 @@ import serial
 
 from project_metadata import build_capture_metadata, find_project_root
 
+try:
+    from build_telemetry_report import build_report as build_telemetry_report
+except ImportError:
+    build_telemetry_report = None
+
 
 REPO_ROOT = find_project_root(Path(__file__).resolve().parent)
 DEFAULT_OUTPUT = REPO_ROOT / "data"
@@ -235,6 +240,11 @@ def main():
             if args.delete_after_download:
                 delete_remote_file(ser, remote["path"])
                 print(f"Deleted from ESP32: {remote['path']}")
+
+        if build_telemetry_report is not None:
+            report_path = build_telemetry_report(output_directory)
+            if report_path is not None:
+                print(f"Telemetry report: {report_path}")
 
 
 if __name__ == "__main__":

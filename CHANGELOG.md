@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-22
+
+### Added
+
+- v4 capture telemetry file `capture_XXX.telemetry.csv` with one sample per second of LittleFS free bytes.
+- automatic `session_telemetry_report.html` generation during export.
+
+### Changed
+
+- `CAPTURE_DONE` now reports free space before and after capture plus telemetry row count.
+- `INFO` now reports total, used, and free LittleFS bytes.
+- No battery voltage sampling was added; the fixed hardware enclosure remains unchanged.
+
 ## 2026-09-15
 
 ### Added
