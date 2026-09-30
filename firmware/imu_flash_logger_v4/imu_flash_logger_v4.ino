@@ -3,6 +3,19 @@
 #include <esp_timer.h>
 #include <stdlib.h>
 
+#define ENABLE_BLE_HID 1
+#define USE_BLE_KEYBOARD_LIBRARY 0
+
+#if ENABLE_BLE_HID
+#if USE_BLE_KEYBOARD_LIBRARY
+#include <BleKeyboard.h>
+#else
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#endif
+#endif
+
 #ifdef RGB_BUILTIN
 #define STATUS_LED_PIN RGB_BUILTIN
 #else
@@ -16,12 +29,29 @@
 #define SERIAL_BAUD 230400
 
 #define BOOT_BUTTON_PIN 0
-#define CAPTURE_SECONDS 12
+#define CAPTURE_SECONDS 10
+#define MIN_VALID_ROWS 1000
+#define BUTTON_STARTUP_ARM_MS 3000
+#define BUTTON_HOLD_MS 1000
 #define MAX_CONSECUTIVE_FAULTS 5
 #define COMMAND_BUFFER_SIZE 64
 #define MAX_SAMPLES (CAPTURE_SECONDS * 260 + 100)
 #define MIN_FREE_BYTES 300000UL
 #define TELEMETRY_MAX_SAMPLES 4
+
+#if ENABLE_BLE_HID
+#define BLE_DEVICE_NAME "KineShoot-Cam"
+#if !USE_BLE_KEYBOARD_LIBRARY
+#define BLE_CONTROL_SERVICE_UUID "6b1d0001-9a3f-4d2a-8f6f-6b1d00000001"
+#define BLE_CONTROL_CHARACTERISTIC_UUID "6b1d0002-9a3f-4d2a-8f6f-6b1d00000002"
+#endif
+#define BLE_VIDEO_STOP_AFTER_MS 15000UL
+#endif
+
+#if ENABLE_BLE_HID && USE_BLE_KEYBOARD_LIBRARY
+BleKeyboard bleKeyboard(BLE_DEVICE_NAME, "KineShoot", 100);
+bool bleKeyboardWasConnected = false;
+#endif
 
 ICM_20948_I2C myICM;
 
@@ -45,9 +75,54 @@ uint32_t totalErrors = 0;
 uint32_t totalResets = 0;
 uint16_t consecutiveFaults = 0;
 uint32_t lastButtonChangeMs = 0;
-bool buttonWasDown = false;
+bool buttonCaptureLatched = false;
+uint32_t buttonDownSinceMs = 0;
+uint32_t captureArmedAtMs = 0;
 char commandBuffer[COMMAND_BUFFER_SIZE];
 size_t commandLength = 0;
+
+#if ENABLE_BLE_HID
+bool hidVideoRecording = false;
+uint32_t hidVideoStopAtMs = 0;
+#endif
+
+#if ENABLE_BLE_HID && !USE_BLE_KEYBOARD_LIBRARY
+volatile bool bleCapturePending = false;
+volatile bool bleCaptureWithHid = false;
+
+class KineShootBleServerCallbacks : public BLEServerCallbacks {
+  void onConnect(BLEServer *server) override {
+    (void)server;
+    Serial.println("BLE_CONNECTED");
+  }
+
+  void onDisconnect(BLEServer *server) override {
+    (void)server;
+    hidVideoRecording = false;
+    Serial.println("BLE_DISCONNECTED");
+    BLEDevice::getAdvertising()->start();
+  }
+};
+
+class KineShootBleCommandCallbacks : public BLECharacteristicCallbacks {
+  void onWrite(BLECharacteristic *characteristic) override {
+    const String value = characteristic->getValue();
+    if (value.length() == 0) {
+      return;
+    }
+    const uint8_t command = (uint8_t)value[0];
+    if (command == 0x01) {
+      bleCaptureWithHid = false;
+      bleCapturePending = true;
+      Serial.println("BLE_COMMAND,capture");
+    } else if (command == 0x02) {
+      bleCaptureWithHid = true;
+      bleCapturePending = true;
+      Serial.println("BLE_COMMAND,capture_and_video");
+    }
+  }
+};
+#endif
 
 static int16_t be16(const uint8_t *data) {
   return (int16_t)(((uint16_t)data[0] << 8) | data[1]);
@@ -213,14 +288,91 @@ static bool isCaptureFile(const char *name) {
   return filename.startsWith("/capture_") && filename.endsWith(".csv");
 }
 
+static bool isPrimaryCaptureFile(const char *name) {
+  const String filename = String(name);
+  return filename.startsWith("/capture_") && filename.endsWith(".csv") &&
+         !filename.endsWith(".telemetry.csv");
+}
+
 static bool findNextCapturePath(char *path, size_t pathSize) {
-  for (uint16_t index = 1; index < 1000; index++) {
-    snprintf(path, pathSize, "/capture_%03u.csv", index);
-    if (!LittleFS.exists(path)) {
-      return true;
+  uint16_t maxIndex = 0;
+  File root = LittleFS.open("/");
+  if (!root) {
+    return false;
+  }
+
+  File entry = root.openNextFile();
+  while (entry) {
+    String name = entry.name();
+    if (!name.startsWith("/")) {
+      name = "/" + name;
+    }
+    if (!entry.isDirectory() && isPrimaryCaptureFile(name.c_str())) {
+      unsigned int index = 0;
+      if (sscanf(name.c_str(), "/capture_%u.csv", &index) == 1 && index < 1000) {
+        if (index > maxIndex) {
+          maxIndex = (uint16_t)index;
+        }
+      }
+    }
+    entry = root.openNextFile();
+  }
+  root.close();
+
+  const uint16_t nextIndex = maxIndex + 1;
+  if (nextIndex >= 1000) {
+    return false;
+  }
+  snprintf(path, pathSize, "/capture_%03u.csv", nextIndex);
+  return true;
+}
+
+static bool isInvalidCaptureFile(const char *path) {
+  File file = LittleFS.open(path, FILE_READ);
+  if (!file) {
+    return false;
+  }
+  if (file.size() == 0) {
+    file.close();
+    return true;
+  }
+  const String header = file.readStringUntil('\n');
+  const String firstDataLine = file.readStringUntil('\n');
+  file.close();
+  return header.length() > 0 && firstDataLine.length() == 0;
+}
+
+static void cleanupInvalidCaptureFiles() {
+  char paths[64][40];
+  uint8_t count = 0;
+
+  File root = LittleFS.open("/");
+  if (!root) {
+    return;
+  }
+  File entry = root.openNextFile();
+  while (entry) {
+    String name = entry.name();
+    if (!name.startsWith("/")) {
+      name = "/" + name;
+    }
+    if (!entry.isDirectory() && isCaptureFile(name.c_str()) && count < 64 &&
+        isInvalidCaptureFile(name.c_str())) {
+      strlcpy(paths[count], name.c_str(), sizeof(paths[count]));
+      count++;
+    }
+    entry = root.openNextFile();
+  }
+  root.close();
+
+  uint8_t removed = 0;
+  for (uint8_t index = 0; index < count; index++) {
+    if (LittleFS.remove(paths[index])) {
+      removed++;
+      Serial.printf("CLEANUP_REMOVED,%s\n", paths[index]);
     }
   }
-  return false;
+  Serial.printf("CLEANUP,invalid=%u,removed=%u\n", count, removed);
 }
 
 static void printFileList() {
@@ -261,9 +413,6 @@ static void dumpFile(const char *path) {
       "BEGIN_FILE,%s,%lu\n",
       path,
       (unsigned long)file.size());
-#if defined(ARDUINO_USB_CDC_ON_BOOT)
-  Serial.setTxTimeoutMs(1000);
-#endif
   Serial.flush();
 
   uint8_t buffer[256];
@@ -280,9 +429,6 @@ static void dumpFile(const char *path) {
   Serial.flush();
   Serial.println();
   Serial.println("END_FILE");
-#if defined(ARDUINO_USB_CDC_ON_BOOT)
-  Serial.setTxTimeoutMs(0);
-#endif
 }
 
 static void deleteFile(const char *path) {
@@ -411,6 +557,21 @@ static bool recordCapture() {
 
   const int64_t endTimeUs = esp_timer_get_time();
   const int64_t writeStartUs = esp_timer_get_time();
+
+  if (rows < MIN_VALID_ROWS) {
+    if (LittleFS.exists(path)) {
+      LittleFS.remove(path);
+    }
+    free(samples);
+    setStatusColor(64, 0, 0);
+    Serial.printf(
+        "CAPTURE_DROPPED,file=%s,samples=%lu,reason=too_few_samples\n",
+        path,
+        (unsigned long)rows);
+    delay(1000);
+    setStatusColor(0, 0, 32);
+    return false;
+  }
 
   File file = LittleFS.open(path, FILE_WRITE);
   if (!file) {
@@ -572,26 +733,102 @@ static bool consumeButtonPress() {
   const bool isDown = digitalRead(BOOT_BUTTON_PIN) == LOW;
   const uint32_t now = millis();
 
-  if (isDown != buttonWasDown && now - lastButtonChangeMs >= 50) {
-    lastButtonChangeMs = now;
-    buttonWasDown = isDown;
-    return isDown;
+  if (now < captureArmedAtMs) {
+    buttonDownSinceMs = 0;
+    buttonCaptureLatched = false;
+    return false;
+  }
+
+  if (!isDown) {
+    buttonDownSinceMs = 0;
+    buttonCaptureLatched = false;
+    return false;
+  }
+
+  if (buttonDownSinceMs == 0) {
+    buttonDownSinceMs = now;
+    return false;
+  }
+
+  if (!buttonCaptureLatched && now - buttonDownSinceMs >= BUTTON_HOLD_MS) {
+    buttonCaptureLatched = true;
+    return true;
   }
 
   return false;
 }
 
+#if ENABLE_BLE_HID
+#if USE_BLE_KEYBOARD_LIBRARY
+static bool sendBleVolumeUp() {
+  if (!bleKeyboard.isConnected()) {
+    return false;
+  }
+  bleKeyboard.press(KEY_MEDIA_VOLUME_UP);
+  delay(120);
+  bleKeyboard.release(KEY_MEDIA_VOLUME_UP);
+  return true;
+}
+
+static void setupBleHid() {
+  bleKeyboard.begin();
+  Serial.printf("BLE_KEYBOARD_READY,name=%s\n", BLE_DEVICE_NAME);
+}
+#else
+static bool sendBleVolumeUp() {
+  return false;
+}
+
+static void setupBleHid() {
+  BLEDevice::init(BLE_DEVICE_NAME);
+  BLEDevice::setMTU(64);
+  BLEServer *server = BLEDevice::createServer();
+  server->setCallbacks(new KineShootBleServerCallbacks());
+
+  BLEService *controlService = server->createService(BLE_CONTROL_SERVICE_UUID);
+  BLECharacteristic *controlCharacteristic = controlService->createCharacteristic(
+      BLE_CONTROL_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR |
+          BLECharacteristic::PROPERTY_READ);
+  controlCharacteristic->setCallbacks(new KineShootBleCommandCallbacks());
+  controlService->start();
+
+  BLEAdvertising *advertising = BLEDevice::getAdvertising();
+  advertising->addServiceUUID(BLE_CONTROL_SERVICE_UUID);
+  advertising->setScanResponse(true);
+  advertising->start();
+  Serial.printf(
+      "BLE_CONTROL_READY,name=%s,service=%s,characteristic=%s\n",
+      BLE_DEVICE_NAME,
+      BLE_CONTROL_SERVICE_UUID,
+      BLE_CONTROL_CHARACTERISTIC_UUID);
+}
+#endif
+
+static void triggerCapture(bool startPhoneVideo) {
+  if (startPhoneVideo) {
+    const bool sent = sendBleVolumeUp();
+    hidVideoRecording = sent;
+    hidVideoStopAtMs = millis() + BLE_VIDEO_STOP_AFTER_MS;
+    Serial.printf("BLE_VIDEO_START,sent=%u\n", sent ? 1 : 0);
+  }
+  recordCapture();
+}
+#else
+static void triggerCapture(bool startPhoneVideo) {
+  (void)startPhoneVideo;
+  recordCapture();
+}
+#endif
+
 void setup() {
   Serial.begin(SERIAL_BAUD);
-#if defined(ARDUINO_USB_CDC_ON_BOOT)
-  Serial.setTxTimeoutMs(0);
-#endif
   delay(1000);
   Serial.println("IMU_FLASH_V4_BOOT");
 
   pinMode(BOOT_BUTTON_PIN, INPUT_PULLUP);
-  buttonWasDown = digitalRead(BOOT_BUTTON_PIN) == LOW;
-  lastButtonChangeMs = millis();
+  buttonDownSinceMs = 0;
+  buttonCaptureLatched = false;
 
   if (!mountFileSystem()) {
     Serial.println("FILESYSTEM_ERROR");
@@ -599,6 +836,8 @@ void setup() {
       delay(1000);
     }
   }
+
+  cleanupInvalidCaptureFiles();
 
   Serial.printf(
       "FILESYSTEM,free=%lu,total=%lu\n",
@@ -624,6 +863,10 @@ void setup() {
   Serial.println(
       "Commands: LIST, INFO, START, DUMP /capture_001.csv, "
       "DELETE /capture_001.csv");
+#if ENABLE_BLE_HID
+  setupBleHid();
+#endif
+  captureArmedAtMs = millis() + BUTTON_STARTUP_ARM_MS;
   setStatusColor(0, 0, 32);
 }
 
@@ -631,8 +874,30 @@ void loop() {
   pollSerialCommands();
 
   if (consumeButtonPress()) {
-    recordCapture();
+    triggerCapture(true);
   }
+
+#if ENABLE_BLE_HID
+#if USE_BLE_KEYBOARD_LIBRARY
+  const bool bleConnectedNow = bleKeyboard.isConnected();
+  if (bleConnectedNow != bleKeyboardWasConnected) {
+    bleKeyboardWasConnected = bleConnectedNow;
+    Serial.printf("BLE_%s\n", bleConnectedNow ? "CONNECTED" : "DISCONNECTED");
+  }
+#else
+  if (bleCapturePending) {
+    const bool startPhoneVideo = bleCaptureWithHid;
+    bleCapturePending = false;
+    triggerCapture(startPhoneVideo);
+  }
+#endif
+
+  if (hidVideoRecording && millis() >= hidVideoStopAtMs) {
+    const bool sent = sendBleVolumeUp();
+    hidVideoRecording = false;
+    Serial.printf("BLE_VIDEO_STOP,sent=%u\n", sent ? 1 : 0);
+  }
+#endif
 
   delay(5);
 }

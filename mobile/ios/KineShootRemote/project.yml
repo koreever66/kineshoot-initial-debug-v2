@@ -1,0 +1,29 @@
+name: KineShootRemote
+options:
+  bundleIdPrefix: com.koreever66
+  deploymentTarget:
+    iOS: "16.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+targets:
+  KineShootRemote:
+    type: application
+    platform: iOS
+    sources:
+      - KineShootRemote
+    info:
+      path: KineShootRemote/Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.koreever66.KineShootRemote
+        PRODUCT_NAME: KineShootRemote
+        TARGETED_DEVICE_FAMILY: "1"
+        SUPPORTS_MACCATALYST: NO
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGN_IDENTITY: ""
+        DEVELOPMENT_TEAM: ""
+
