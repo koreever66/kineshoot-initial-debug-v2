@@ -139,6 +139,7 @@ struct ContentView: View {
         Task { @MainActor in
             do {
                 try await recorder.startRecording()
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
                 guard bluetooth.sendStartCapture() else {
                     recorder.stopRecording()
                     throw RecorderError.cameraUnavailable
@@ -146,7 +147,7 @@ struct ContentView: View {
 
                 autoStopTask?.cancel()
                 autoStopTask = Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 12_000_000_000)
+                    try? await Task.sleep(nanoseconds: 14_000_000_000)
                     guard !Task.isCancelled else {
                         return
                     }
