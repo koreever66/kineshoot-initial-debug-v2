@@ -9,6 +9,9 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
+                CameraPreview(session: recorder.session)
+                    .aspectRatio(3.0 / 4.0, contentMode: .fit)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
                 statusCard
                 captureButton
                 Text("点击开始后，App 会同时启动录像和 IMU 采集；约 12 秒后自动停止录像。")
@@ -20,6 +23,9 @@ struct ContentView: View {
             .navigationTitle("KineShoot 采集")
             .onAppear {
                 bluetooth.startScanning()
+                Task {
+                    try? await recorder.prepare()
+                }
             }
         }
     }

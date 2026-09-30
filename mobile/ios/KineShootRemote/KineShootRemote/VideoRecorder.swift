@@ -8,12 +8,12 @@ final class VideoRecorder: NSObject, ObservableObject {
     @Published private(set) var statusText = "相机待机"
     @Published var errorMessage: String?
 
-    private let session = AVCaptureSession()
+    let session = AVCaptureSession()
     private let movieOutput = AVCaptureMovieFileOutput()
     private var sessionConfigured = false
     private var activeURL: URL?
 
-    func startRecording() async throws {
+    func prepare() async throws {
         try await ensureCameraPermission()
 
         if !sessionConfigured {
@@ -23,6 +23,10 @@ final class VideoRecorder: NSObject, ObservableObject {
         if !session.isRunning {
             session.startRunning()
         }
+    }
+
+    func startRecording() async throws {
+        try await prepare()
 
         let outputURL = try makeOutputURL()
         activeURL = outputURL
@@ -78,6 +82,10 @@ final class VideoRecorder: NSObject, ObservableObject {
             throw RecorderError.movieOutputUnavailable
         }
         session.addOutput(movieOutput)
+        if let connection = movieOutput.connection(with: .video),
+           connection.isVideoOrientationSupported {
+            connection.videoOrientation = .portrait
+        }
         session.commitConfiguration()
         sessionConfigured = true
     }
@@ -130,9 +138,6 @@ extension VideoRecorder: AVCaptureFileOutputRecordingDelegate {
         error: Error?
     ) {
         DispatchQueue.main.async {
-            if self.session.isRunning {
-                self.session.stopRunning()
-            }
             self.isRecording = false
             UIApplication.shared.isIdleTimerDisabled = false
 
