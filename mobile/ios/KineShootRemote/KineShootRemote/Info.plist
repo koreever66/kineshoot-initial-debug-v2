@@ -15,9 +15,9 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.3.0</string>
+    <string>1.4.0</string>
     <key>CFBundleVersion</key>
-    <string>4</string>
+    <string>5</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>NSBluetoothAlwaysUsageDescription</key>
@@ -26,6 +26,10 @@
     <string>用于连接 KineShoot 采集设备并启动 IMU 采集。</string>
     <key>NSCameraUsageDescription</key>
     <string>用于同步录制投篮视频。</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>用于在同步录制投篮视频时采集声音。</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>用于在保存投篮视频时访问照片。</string>
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>用于把采集视频保存到照片。</string>
     <key>UIApplicationSupportsIndirectInputEvents</key>
