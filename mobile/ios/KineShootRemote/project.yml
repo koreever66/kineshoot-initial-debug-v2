@@ -16,6 +16,19 @@ targets:
       - KineShootRemote
     info:
       path: KineShootRemote/Info.plist
+      properties:
+        CFBundleDisplayName: KineShoot
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        LSRequiresIPhoneOS: true
+        NSBluetoothAlwaysUsageDescription: "Connect to the KineShoot capture device and start IMU recording."
+        NSBluetoothPeripheralUsageDescription: "Connect to the KineShoot capture device and start IMU recording."
+        NSCameraUsageDescription: "Record synchronized basketball shooting videos."
+        NSPhotoLibraryAddUsageDescription: "Save recorded capture videos to Photos."
+        UIApplicationSupportsIndirectInputEvents: true
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.koreever66.KineShootRemote
@@ -26,4 +39,3 @@ targets:
         CODE_SIGNING_REQUIRED: NO
         CODE_SIGN_IDENTITY: ""
         DEVELOPMENT_TEAM: ""
-
