@@ -6,12 +6,17 @@ import UIKit
 final class VideoRecorder: NSObject, ObservableObject {
     @Published private(set) var isRecording = false
     @Published private(set) var statusText = "相机待机"
+    @Published private(set) var cameraPosition: AVCaptureDevice.Position = .back
+    @Published private(set) var zoomFactor: CGFloat = 1
+    @Published private(set) var maxZoomFactor: CGFloat = 1
     @Published var errorMessage: String?
 
     let session = AVCaptureSession()
     private let movieOutput = AVCaptureMovieFileOutput()
     private var sessionConfigured = false
     private var activeURL: URL?
+    private var videoInput: AVCaptureDeviceInput?
+    private var currentCamera: AVCaptureDevice?
 
     func prepare() async throws {
         try await ensureCameraPermission()
@@ -43,6 +48,50 @@ final class VideoRecorder: NSObject, ObservableObject {
         movieOutput.stopRecording()
     }
 
+    func switchCamera(to position: AVCaptureDevice.Position) async throws {
+        guard !isRecording else {
+            throw RecorderError.cannotSwitchWhileRecording
+        }
+        guard position != cameraPosition || videoInput == nil else {
+            return
+        }
+
+        let camera = try cameraDevice(for: position)
+        let newInput = try AVCaptureDeviceInput(device: camera)
+        let previousInput = videoInput
+
+        session.beginConfiguration()
+        if let previousInput {
+            session.removeInput(previousInput)
+        }
+
+        guard session.canAddInput(newInput) else {
+            if let previousInput, session.canAddInput(previousInput) {
+                session.addInput(previousInput)
+            }
+            session.commitConfiguration()
+            throw RecorderError.cameraInputUnavailable
+        }
+
+        session.addInput(newInput)
+        videoInput = newInput
+        currentCamera = camera
+        cameraPosition = position
+        zoomFactor = 1
+        updateVideoConnection()
+        session.commitConfiguration()
+        updateZoomRange(for: camera)
+        applyZoom(1, to: camera)
+    }
+
+    func setZoom(_ requestedZoom: CGFloat) {
+        guard let currentCamera else {
+            return
+        }
+        let clampedZoom = min(max(requestedZoom, 1), maxZoomFactor)
+        applyZoom(clampedZoom, to: currentCamera)
+    }
+
     private func ensureCameraPermission() async throws {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
@@ -58,13 +107,7 @@ final class VideoRecorder: NSObject, ObservableObject {
     }
 
     private func configureSession() throws {
-        guard let camera = AVCaptureDevice.default(
-            .builtInWideAngleCamera,
-            for: .video,
-            position: .back
-        ) else {
-            throw RecorderError.cameraUnavailable
-        }
+        let camera = try cameraDevice(for: cameraPosition)
 
         let input = try AVCaptureDeviceInput(device: camera)
 
@@ -82,12 +125,59 @@ final class VideoRecorder: NSObject, ObservableObject {
             throw RecorderError.movieOutputUnavailable
         }
         session.addOutput(movieOutput)
-        if let connection = movieOutput.connection(with: .video),
-           connection.isVideoOrientationSupported {
-            connection.videoOrientation = .portrait
-        }
+        videoInput = input
+        currentCamera = camera
+        updateVideoConnection()
         session.commitConfiguration()
         sessionConfigured = true
+        updateZoomRange(for: camera)
+        applyZoom(1, to: camera)
+    }
+
+    private func cameraDevice(for position: AVCaptureDevice.Position) throws -> AVCaptureDevice {
+        let deviceTypes: [AVCaptureDevice.DeviceType]
+        if position == .front {
+            deviceTypes = [.builtInTrueDepthCamera, .builtInWideAngleCamera]
+        } else {
+            deviceTypes = [.builtInTripleCamera, .builtInDualWideCamera, .builtInWideAngleCamera]
+        }
+
+        for deviceType in deviceTypes {
+            if let camera = AVCaptureDevice.default(deviceType, for: .video, position: position) {
+                return camera
+            }
+        }
+
+        throw RecorderError.cameraUnavailable
+    }
+
+    private func updateZoomRange(for camera: AVCaptureDevice) {
+        let practicalMaximum = cameraPosition == .front ? 4.0 : 10.0
+        maxZoomFactor = max(1, min(CGFloat(camera.maxAvailableVideoZoomFactor), practicalMaximum))
+        zoomFactor = min(max(zoomFactor, 1), maxZoomFactor)
+    }
+
+    private func applyZoom(_ zoom: CGFloat, to camera: AVCaptureDevice) {
+        do {
+            try camera.lockForConfiguration()
+            camera.videoZoomFactor = min(max(zoom, 1), maxZoomFactor)
+            camera.unlockForConfiguration()
+            zoomFactor = camera.videoZoomFactor
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func updateVideoConnection() {
+        guard let connection = movieOutput.connection(with: .video) else {
+            return
+        }
+        if connection.isVideoOrientationSupported {
+            connection.videoOrientation = .portrait
+        }
+        if connection.isVideoMirroringSupported {
+            connection.isVideoMirrored = cameraPosition == .front
+        }
     }
 
     private func makeOutputURL() throws -> URL {
@@ -157,6 +247,7 @@ enum RecorderError: LocalizedError {
     case cameraUnavailable
     case cameraInputUnavailable
     case movieOutputUnavailable
+    case cannotSwitchWhileRecording
 
     var errorDescription: String? {
         switch self {
@@ -168,6 +259,8 @@ enum RecorderError: LocalizedError {
             return "无法配置后置相机输入。"
         case .movieOutputUnavailable:
             return "无法配置视频输出。"
+        case .cannotSwitchWhileRecording:
+            return "录像过程中不能切换前后摄像头。"
         }
     }
 }

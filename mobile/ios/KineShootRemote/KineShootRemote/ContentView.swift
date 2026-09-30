@@ -1,3 +1,4 @@
+import AVFoundation
 import SwiftUI
 
 struct ContentView: View {
@@ -12,6 +13,7 @@ struct ContentView: View {
                 CameraPreview(session: recorder.session)
                     .aspectRatio(3.0 / 4.0, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                cameraControls
                 statusCard
                 captureButton
                 Text("点击开始后，App 会同时启动录像和 IMU 采集；约 12 秒后自动停止录像。")
@@ -28,6 +30,50 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    private var cameraControls: some View {
+        VStack(spacing: 12) {
+            Picker("摄像头", selection: cameraPositionBinding) {
+                Text("后置").tag(AVCaptureDevice.Position.back)
+                Text("前置").tag(AVCaptureDevice.Position.front)
+            }
+            .pickerStyle(.segmented)
+            .disabled(recorder.isRecording)
+
+            HStack(spacing: 12) {
+                Image(systemName: "minus.magnifyingglass")
+                    .foregroundStyle(.secondary)
+                Slider(value: zoomBinding, in: 1...Double(max(1, recorder.maxZoomFactor)))
+                Image(systemName: "plus.magnifyingglass")
+                    .foregroundStyle(.secondary)
+                Text(String(format: "%.1fx", recorder.zoomFactor))
+                    .monospacedDigit()
+                    .frame(width: 46, alignment: .trailing)
+            }
+        }
+    }
+
+    private var cameraPositionBinding: Binding<AVCaptureDevice.Position> {
+        Binding(
+            get: { recorder.cameraPosition },
+            set: { position in
+                Task { @MainActor in
+                    do {
+                        try await recorder.switchCamera(to: position)
+                    } catch {
+                        recorder.errorMessage = error.localizedDescription
+                    }
+                }
+            }
+        )
+    }
+
+    private var zoomBinding: Binding<Double> {
+        Binding(
+            get: { Double(recorder.zoomFactor) },
+            set: { recorder.setZoom(CGFloat($0)) }
+        )
     }
 
     private var statusCard: some View {
