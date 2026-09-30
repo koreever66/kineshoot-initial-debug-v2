@@ -10,10 +10,10 @@
   "software_branch": "codex/software-data",
   "hardware_branch": "codex/hardware-bringup",
   "interface_revision": "I1",
-  "hardware_revision": "H1",
+  "hardware_revision": "H2",
   "software_revision": "F4",
   "firmware_protocol": "imu-v4-csv",
   "mount_position": "bench_handheld",
   "test_type": "unspecified",
-  "notes": "H1 is the six-wire direct connection baseline. Update hardware_revision and mount_position when the H2 fixture is assembled."
+  "notes": "H2 is the wrist-node replacement-board baseline. Use H2 for captures made after the ESP32-S3 replacement; use ble_command for App/BLE-triggered exports and boot_button only for the local BOOT fallback."
 }
