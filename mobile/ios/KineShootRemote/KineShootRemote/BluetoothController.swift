@@ -121,8 +121,6 @@ extension BluetoothController: CBCentralManagerDelegate {
     func centralManager(
         _ central: CBCentralManager,
         didDisconnectPeripheral peripheral: CBPeripheral,
-        timestamp: CFAbsoluteTime,
-        isReconnecting: Bool,
         error: Error?
     ) {
         self.peripheral = peripheral
@@ -167,4 +165,3 @@ extension BluetoothController: CBPeripheralDelegate {
         statusText = isReady ? "已连接，可以开始采集" : "命令通道不可用"
     }
 }
-
