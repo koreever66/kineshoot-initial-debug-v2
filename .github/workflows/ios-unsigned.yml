@@ -7,6 +7,9 @@ on:
       - "mobile/ios/KineShootRemote/**"
       - ".github/workflows/ios-unsigned.yml"
 
+permissions:
+  contents: write
+
 jobs:
   build-ipa:
     runs-on: macos-15
@@ -51,3 +54,13 @@ jobs:
           path: mobile/ios/KineShootRemote/KineShootRemote-unsigned.ipa
           if-no-files-found: error
 
+      - name: Publish IPA download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ios-latest
+          name: KineShoot iOS latest
+          prerelease: true
+          make_latest: false
+          files: mobile/ios/KineShootRemote/KineShootRemote-unsigned.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
