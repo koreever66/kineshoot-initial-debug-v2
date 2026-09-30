@@ -3,17 +3,12 @@
 #include <esp_timer.h>
 #include <stdlib.h>
 
-#define ENABLE_BLE_HID 1
-#define USE_BLE_KEYBOARD_LIBRARY 0
+#define ENABLE_BLE_CONTROL 1
 
-#if ENABLE_BLE_HID
-#if USE_BLE_KEYBOARD_LIBRARY
-#include <BleKeyboard.h>
-#else
+#if ENABLE_BLE_CONTROL
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
-#endif
 #endif
 
 #ifdef RGB_BUILTIN
@@ -39,18 +34,10 @@
 #define MIN_FREE_BYTES 300000UL
 #define TELEMETRY_MAX_SAMPLES 4
 
-#if ENABLE_BLE_HID
+#if ENABLE_BLE_CONTROL
 #define BLE_DEVICE_NAME "KineShoot-Cam"
-#if !USE_BLE_KEYBOARD_LIBRARY
 #define BLE_CONTROL_SERVICE_UUID "6b1d0001-9a3f-4d2a-8f6f-6b1d00000001"
 #define BLE_CONTROL_CHARACTERISTIC_UUID "6b1d0002-9a3f-4d2a-8f6f-6b1d00000002"
-#endif
-#define BLE_VIDEO_STOP_AFTER_MS 15000UL
-#endif
-
-#if ENABLE_BLE_HID && USE_BLE_KEYBOARD_LIBRARY
-BleKeyboard bleKeyboard(BLE_DEVICE_NAME, "KineShoot", 100);
-bool bleKeyboardWasConnected = false;
 #endif
 
 ICM_20948_I2C myICM;
@@ -81,14 +68,8 @@ uint32_t captureArmedAtMs = 0;
 char commandBuffer[COMMAND_BUFFER_SIZE];
 size_t commandLength = 0;
 
-#if ENABLE_BLE_HID
-bool hidVideoRecording = false;
-uint32_t hidVideoStopAtMs = 0;
-#endif
-
-#if ENABLE_BLE_HID && !USE_BLE_KEYBOARD_LIBRARY
+#if ENABLE_BLE_CONTROL
 volatile bool bleCapturePending = false;
-volatile bool bleCaptureWithHid = false;
 
 class KineShootBleServerCallbacks : public BLEServerCallbacks {
   void onConnect(BLEServer *server) override {
@@ -98,7 +79,6 @@ class KineShootBleServerCallbacks : public BLEServerCallbacks {
 
   void onDisconnect(BLEServer *server) override {
     (void)server;
-    hidVideoRecording = false;
     Serial.println("BLE_DISCONNECTED");
     BLEDevice::getAdvertising()->start();
   }
@@ -112,11 +92,9 @@ class KineShootBleCommandCallbacks : public BLECharacteristicCallbacks {
     }
     const uint8_t command = (uint8_t)value[0];
     if (command == 0x01) {
-      bleCaptureWithHid = false;
       bleCapturePending = true;
       Serial.println("BLE_COMMAND,capture");
     } else if (command == 0x02) {
-      bleCaptureWithHid = true;
       bleCapturePending = true;
       Serial.println("BLE_COMMAND,capture_and_video");
     }
@@ -758,28 +736,8 @@ static bool consumeButtonPress() {
   return false;
 }
 
-#if ENABLE_BLE_HID
-#if USE_BLE_KEYBOARD_LIBRARY
-static bool sendBleVolumeUp() {
-  if (!bleKeyboard.isConnected()) {
-    return false;
-  }
-  bleKeyboard.press(KEY_MEDIA_VOLUME_UP);
-  delay(120);
-  bleKeyboard.release(KEY_MEDIA_VOLUME_UP);
-  return true;
-}
-
-static void setupBleHid() {
-  bleKeyboard.begin();
-  Serial.printf("BLE_KEYBOARD_READY,name=%s\n", BLE_DEVICE_NAME);
-}
-#else
-static bool sendBleVolumeUp() {
-  return false;
-}
-
-static void setupBleHid() {
+#if ENABLE_BLE_CONTROL
+static void setupBleControl() {
   BLEDevice::init(BLE_DEVICE_NAME);
   BLEDevice::setMTU(64);
   BLEServer *server = BLEDevice::createServer();
@@ -802,22 +760,6 @@ static void setupBleHid() {
       BLE_DEVICE_NAME,
       BLE_CONTROL_SERVICE_UUID,
       BLE_CONTROL_CHARACTERISTIC_UUID);
-}
-#endif
-
-static void triggerCapture(bool startPhoneVideo) {
-  if (startPhoneVideo) {
-    const bool sent = sendBleVolumeUp();
-    hidVideoRecording = sent;
-    hidVideoStopAtMs = millis() + BLE_VIDEO_STOP_AFTER_MS;
-    Serial.printf("BLE_VIDEO_START,sent=%u\n", sent ? 1 : 0);
-  }
-  recordCapture();
-}
-#else
-static void triggerCapture(bool startPhoneVideo) {
-  (void)startPhoneVideo;
-  recordCapture();
 }
 #endif
 
@@ -863,8 +805,8 @@ void setup() {
   Serial.println(
       "Commands: LIST, INFO, START, DUMP /capture_001.csv, "
       "DELETE /capture_001.csv");
-#if ENABLE_BLE_HID
-  setupBleHid();
+#if ENABLE_BLE_CONTROL
+  setupBleControl();
 #endif
   captureArmedAtMs = millis() + BUTTON_STARTUP_ARM_MS;
   setStatusColor(0, 0, 32);
@@ -874,28 +816,13 @@ void loop() {
   pollSerialCommands();
 
   if (consumeButtonPress()) {
-    triggerCapture(true);
+    recordCapture();
   }
 
-#if ENABLE_BLE_HID
-#if USE_BLE_KEYBOARD_LIBRARY
-  const bool bleConnectedNow = bleKeyboard.isConnected();
-  if (bleConnectedNow != bleKeyboardWasConnected) {
-    bleKeyboardWasConnected = bleConnectedNow;
-    Serial.printf("BLE_%s\n", bleConnectedNow ? "CONNECTED" : "DISCONNECTED");
-  }
-#else
+#if ENABLE_BLE_CONTROL
   if (bleCapturePending) {
-    const bool startPhoneVideo = bleCaptureWithHid;
     bleCapturePending = false;
-    triggerCapture(startPhoneVideo);
-  }
-#endif
-
-  if (hidVideoRecording && millis() >= hidVideoStopAtMs) {
-    const bool sent = sendBleVolumeUp();
-    hidVideoRecording = false;
-    Serial.printf("BLE_VIDEO_STOP,sent=%u\n", sent ? 1 : 0);
+    recordCapture();
   }
 #endif
 
