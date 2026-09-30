@@ -9,6 +9,7 @@ final class VideoRecorder: NSObject, ObservableObject {
     @Published private(set) var cameraPosition: AVCaptureDevice.Position = .back
     @Published private(set) var zoomFactor: CGFloat = 1
     @Published private(set) var maxZoomFactor: CGFloat = 1
+    @Published private(set) var captureFormatText = "1080p"
     @Published var errorMessage: String?
 
     let session = AVCaptureSession()
@@ -57,6 +58,7 @@ final class VideoRecorder: NSObject, ObservableObject {
         }
 
         let camera = try cameraDevice(for: position)
+        configureCameraFormat(for: camera)
         let newInput = try AVCaptureDeviceInput(device: camera)
         let previousInput = videoInput
 
@@ -108,11 +110,12 @@ final class VideoRecorder: NSObject, ObservableObject {
 
     private func configureSession() throws {
         let camera = try cameraDevice(for: cameraPosition)
+        configureCameraFormat(for: camera)
 
         let input = try AVCaptureDeviceInput(device: camera)
 
         session.beginConfiguration()
-        session.sessionPreset = .high
+        session.sessionPreset = .hd1920x1080
 
         guard session.canAddInput(input) else {
             session.commitConfiguration()
@@ -142,13 +145,60 @@ final class VideoRecorder: NSObject, ObservableObject {
             deviceTypes = [.builtInTripleCamera, .builtInDualWideCamera, .builtInWideAngleCamera]
         }
 
+        var fallbackCamera: AVCaptureDevice?
         for deviceType in deviceTypes {
             if let camera = AVCaptureDevice.default(deviceType, for: .video, position: position) {
-                return camera
+                if fallbackCamera == nil {
+                    fallbackCamera = camera
+                }
+                if supports1080p60(camera) {
+                    return camera
+                }
             }
         }
 
+        if let fallbackCamera {
+            return fallbackCamera
+        }
+
         throw RecorderError.cameraUnavailable
+    }
+
+    private func supports1080p60(_ camera: AVCaptureDevice) -> Bool {
+        camera.formats.contains { format in
+            let dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
+            let supports60 = format.videoSupportedFrameRateRanges.contains {
+                $0.minFrameRate <= 60 && $0.maxFrameRate >= 60
+            }
+            return dimensions.width == 1920 && dimensions.height == 1080 && supports60
+        }
+    }
+
+    private func configureCameraFormat(for camera: AVCaptureDevice) {
+        guard let format = camera.formats.first(where: { format in
+            let dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
+            let supports60 = format.videoSupportedFrameRateRanges.contains {
+                $0.minFrameRate <= 60 && $0.maxFrameRate >= 60
+            }
+            return dimensions.width == 1920 && dimensions.height == 1080 && supports60
+        }) else {
+            captureFormatText = "默认帧率"
+            errorMessage = "当前摄像头不支持 1080p60，将使用系统默认帧率。"
+            return
+        }
+
+        do {
+            try camera.lockForConfiguration()
+            camera.activeFormat = format
+            let frameDuration = CMTime(value: 1, timescale: 60)
+            camera.activeVideoMinFrameDuration = frameDuration
+            camera.activeVideoMaxFrameDuration = frameDuration
+            camera.unlockForConfiguration()
+            captureFormatText = "1080p60"
+        } catch {
+            captureFormatText = "默认帧率"
+            errorMessage = error.localizedDescription
+        }
     }
 
     private func updateZoomRange(for camera: AVCaptureDevice) {

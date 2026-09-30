@@ -50,6 +50,9 @@ struct ContentView: View {
                 Text(String(format: "%.1fx", recorder.zoomFactor))
                     .monospacedDigit()
                     .frame(width: 46, alignment: .trailing)
+                Text(recorder.captureFormatText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
