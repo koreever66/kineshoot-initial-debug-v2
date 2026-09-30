@@ -62,11 +62,11 @@ final class VideoRecorder: NSObject, ObservableObject {
         }
 
         let camera = try cameraDevice(for: position)
-        configureCameraFormat(for: camera)
         let newInput = try AVCaptureDeviceInput(device: camera)
         let previousInput = videoInput
 
         session.beginConfiguration()
+        configureCameraFormat(for: camera)
         if let previousInput {
             session.removeInput(previousInput)
         }
@@ -115,12 +115,12 @@ final class VideoRecorder: NSObject, ObservableObject {
 
     private func configureSession() throws {
         let camera = try cameraDevice(for: cameraPosition)
-        configureCameraFormat(for: camera)
 
         let input = try AVCaptureDeviceInput(device: camera)
 
         session.beginConfiguration()
-        session.sessionPreset = .hd1920x1080
+        session.sessionPreset = .inputPriority
+        configureCameraFormat(for: camera)
 
         guard session.canAddInput(input) else {
             session.commitConfiguration()
