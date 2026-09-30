@@ -19,6 +19,7 @@ final class VideoRecorder: NSObject, ObservableObject {
     private var videoInput: AVCaptureDeviceInput?
     private var currentCamera: AVCaptureDevice?
 
+    @MainActor
     func prepare() async throws {
         try await ensureCameraPermission()
 
@@ -31,6 +32,7 @@ final class VideoRecorder: NSObject, ObservableObject {
         }
     }
 
+    @MainActor
     func startRecording() async throws {
         try await prepare()
 
@@ -42,6 +44,7 @@ final class VideoRecorder: NSObject, ObservableObject {
         movieOutput.startRecording(to: outputURL, recordingDelegate: self)
     }
 
+    @MainActor
     func stopRecording() {
         guard movieOutput.isRecording else {
             return
@@ -49,6 +52,7 @@ final class VideoRecorder: NSObject, ObservableObject {
         movieOutput.stopRecording()
     }
 
+    @MainActor
     func switchCamera(to position: AVCaptureDevice.Position) async throws {
         guard !isRecording else {
             throw RecorderError.cannotSwitchWhileRecording
@@ -86,6 +90,7 @@ final class VideoRecorder: NSObject, ObservableObject {
         applyZoom(1, to: camera)
     }
 
+    @MainActor
     func setZoom(_ requestedZoom: CGFloat) {
         guard let currentCamera else {
             return
