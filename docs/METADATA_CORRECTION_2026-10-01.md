@@ -72,3 +72,12 @@ export_usb_boot_COM6.bat
 
 only when capture was started by the physical BOOT button.
 
+For battery-powered App/BLE captures, use:
+
+```text
+export_battery_ble_COM6.bat
+```
+
+This records `power_source = battery_boost` while keeping `trigger_source = ble_command` and `hardware_revision = H2`.
+
+The verified battery session `session_20261001_170445/capture_001-002` was corrected to these values without modifying the CSV payloads.
