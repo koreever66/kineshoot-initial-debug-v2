@@ -3,3 +3,7 @@ Desktop.ini
 *.tmp
 __pycache__/
 *.pyc
+
+# Player videos are local-only by default. Do not stage or push new player
+# video directories unless the user explicitly approves that upload.
+data/player_videos/*/

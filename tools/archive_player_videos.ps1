@@ -6,7 +6,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$Source,
 
-    [switch]$NoPush
+    [switch]$Upload
 )
 
 $ErrorActionPreference = "Stop"
@@ -33,11 +33,14 @@ foreach ($video in $videos) {
     Copy-Item -LiteralPath $video.FullName -Destination (Join-Path $destination $video.Name) -Force
 }
 
-git -C $repoRoot add -- "data/player_videos/$Player"
-git -C $repoRoot commit -m "Archive player $Player capture videos"
-
-if (-not $NoPush) {
+if ($Upload) {
+    git -C $repoRoot add -f -- "data/player_videos/$Player"
+    git -C $repoRoot commit -m "Archive player $Player capture videos"
     git -C $repoRoot push v2 codex/software-data
 }
 
-Write-Host "Archived $($videos.Count) video(s) for player $Player."
+if ($Upload) {
+    Write-Host "Archived and uploaded $($videos.Count) video(s) for player $Player."
+} else {
+    Write-Host "Archived locally only: $($videos.Count) video(s) for player $Player."
+}
