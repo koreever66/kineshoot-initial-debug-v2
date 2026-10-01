@@ -46,6 +46,12 @@ def parse_args():
         default=10.0,
         help="Seconds to wait for IMU_FLASH_V3_READY or IMU_FLASH_V4_READY",
     )
+    parser.add_argument(
+        "--list-timeout",
+        type=float,
+        default=30.0,
+        help="Seconds to wait for the complete LIST response",
+    )
     parser.add_argument("--hardware-revision")
     parser.add_argument("--mount-position")
     parser.add_argument("--test-type")
@@ -97,13 +103,13 @@ def wait_for_ready(ser, timeout_s):
     raise TimeoutError("ESP32 did not become ready.")
 
 
-def list_remote_files(ser):
+def list_remote_files(ser, timeout_s):
     ser.reset_input_buffer()
     ser.write(b"LIST\n")
     ser.flush()
 
     files = []
-    deadline = time.monotonic() + 5.0
+    deadline = time.monotonic() + timeout_s
     while time.monotonic() < deadline:
         line = read_line(ser, deadline)
         if line == "LIST_END":
@@ -198,7 +204,7 @@ def main():
             pass
 
         wait_for_ready(ser, args.ready_timeout)
-        files = list_remote_files(ser)
+        files = list_remote_files(ser, args.list_timeout)
 
         if not files:
             print("No capture files found.")
