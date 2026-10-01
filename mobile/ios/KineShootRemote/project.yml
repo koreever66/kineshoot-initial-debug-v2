@@ -18,8 +18,8 @@ targets:
       path: KineShootRemote/Info.plist
       properties:
         CFBundleDisplayName: KineShoot
-        CFBundleShortVersionString: "1.5.1"
-        CFBundleVersion: "8"
+        CFBundleShortVersionString: "1.6.0"
+        CFBundleVersion: "9"
         LSRequiresIPhoneOS: true
         NSBluetoothAlwaysUsageDescription: "Connect to the KineShoot capture device and start IMU recording."
         NSBluetoothPeripheralUsageDescription: "Connect to the KineShoot capture device and start IMU recording."
@@ -27,6 +27,8 @@ targets:
         NSMicrophoneUsageDescription: "Record audio together with synchronized basketball shooting videos."
         NSPhotoLibraryUsageDescription: "Access the photo library when saving recorded capture videos."
         NSPhotoLibraryAddUsageDescription: "Save recorded capture videos to Photos."
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
         UIApplicationSupportsIndirectInputEvents: true
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:

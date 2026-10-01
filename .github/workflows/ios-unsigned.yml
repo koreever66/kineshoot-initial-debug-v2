@@ -28,6 +28,7 @@ jobs:
       - name: Build unsigned app
         working-directory: mobile/ios/KineShootRemote
         run: |
+          set -o pipefail
           xcodebuild \
             -project KineShootRemote.xcodeproj \
             -scheme KineShootRemote \
@@ -37,7 +38,19 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            build
+            build 2>&1 | tee build.log
+
+      - name: Publish build log on failure
+        if: failure()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ios-build-log
+          name: KineShoot iOS build log
+          prerelease: true
+          make_latest: false
+          files: mobile/ios/KineShootRemote/build.log
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Package unsigned IPA
         working-directory: mobile/ios/KineShootRemote

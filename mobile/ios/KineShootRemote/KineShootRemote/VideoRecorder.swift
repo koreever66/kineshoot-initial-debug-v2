@@ -3,6 +3,13 @@ import Foundation
 import Photos
 import UIKit
 
+struct RecordedVideo: Identifiable, Equatable {
+    let id: UUID
+    let fileURL: URL
+    let startedAt: Date
+    let finishedAt: Date
+}
+
 final class VideoRecorder: NSObject, ObservableObject {
     @Published private(set) var isRecording = false
     @Published private(set) var statusText = "相机待机"
@@ -10,6 +17,8 @@ final class VideoRecorder: NSObject, ObservableObject {
     @Published private(set) var zoomFactor: CGFloat = 1
     @Published private(set) var maxZoomFactor: CGFloat = 1
     @Published private(set) var captureFormatText = "1080p"
+    @Published private(set) var finishedRecording: RecordedVideo?
+    @Published private(set) var lastPhotoIdentifier: String?
     @Published var errorMessage: String?
 
     let session = AVCaptureSession()
@@ -18,6 +27,7 @@ final class VideoRecorder: NSObject, ObservableObject {
     private var activeURL: URL?
     private var videoInput: AVCaptureDeviceInput?
     private var currentCamera: AVCaptureDevice?
+    private var recordingStartedAt: Date?
 
     @MainActor
     func prepare() async throws {
@@ -38,6 +48,7 @@ final class VideoRecorder: NSObject, ObservableObject {
 
         let outputURL = try makeOutputURL()
         activeURL = outputURL
+        recordingStartedAt = Date()
         isRecording = true
         statusText = "录像中"
         UIApplication.shared.isIdleTimerDisabled = true
@@ -97,6 +108,10 @@ final class VideoRecorder: NSObject, ObservableObject {
         }
         let clampedZoom = min(max(requestedZoom, 1), maxZoomFactor)
         applyZoom(clampedZoom, to: currentCamera)
+    }
+
+    func clearFinishedRecording() {
+        finishedRecording = nil
     }
 
     private func ensureCameraPermission() async throws {
@@ -250,6 +265,7 @@ final class VideoRecorder: NSObject, ObservableObject {
     }
 
     private func saveToPhotos(_ url: URL) {
+        lastPhotoIdentifier = nil
         PHPhotoLibrary.requestAuthorization(for: .addOnly) { [weak self] status in
             guard status == .authorized || status == .limited else {
                 DispatchQueue.main.async {
@@ -259,12 +275,15 @@ final class VideoRecorder: NSObject, ObservableObject {
                 return
             }
 
+            var placeholder: PHObjectPlaceholder?
             PHPhotoLibrary.shared().performChanges {
-                PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
+                let request = PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
+                placeholder = request?.placeholderForCreatedAsset
             } completionHandler: { success, error in
                 DispatchQueue.main.async {
                     if success {
                         self?.statusText = "视频已保存到照片"
+                        self?.lastPhotoIdentifier = placeholder?.localIdentifier
                     } else {
                         self?.statusText = "视频已保留在临时目录"
                         self?.errorMessage = error?.localizedDescription ?? "保存视频失败。"
@@ -292,6 +311,12 @@ extension VideoRecorder: AVCaptureFileOutputRecordingDelegate {
                 return
             }
 
+            self.finishedRecording = RecordedVideo(
+                id: UUID(),
+                fileURL: outputFileURL,
+                startedAt: self.recordingStartedAt ?? Date(),
+                finishedAt: Date()
+            )
             self.saveToPhotos(outputFileURL)
         }
     }
